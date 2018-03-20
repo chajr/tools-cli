@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+$mainDir = __DIR__ . '/../';
+
+require_once $mainDir . 'vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use ToolsCli\Console\Commands;
+
+$composer = json_decode(
+    file_get_contents($mainDir . 'composer.json')
+);
+
+$command = new Commands;
+$application = new Application;
+
+$application->setName($composer->description);
+$application->setVersion($composer->version);
+$application->addCommands($command);
+$application->setDefaultCommand($command->get('default_name'));   //??
+
+$application->run();

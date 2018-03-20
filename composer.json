@@ -1,0 +1,41 @@
+{
+    "name": "chajr/tools-cli",
+    "type": "library",
+    "license": "Apache-2.0",
+    "description": "Useful console tools.",
+    "version": "v0.1.0.0",
+    "keywords": [],
+    "homepage": "https://github.com/chajr/tools-cli",
+    "authors": [
+        {
+            "name": "Michał Adamiak",
+            "email": "chajr@bluetree.pl",
+            "homepage": "https://github.com/chajr",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "symfony/filesystem": "4.0.*",
+        "symfony/console": "4.0.*",
+        "bluetree-service/register": "0.2.*",
+        "bluetree-service/container": "0.1.*"
+    },
+    "require-dev": {
+        "satooshi/php-coveralls": "1.0.*",
+        "phpunit/phpunit": "7.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ToolsCli\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ToolsCliTests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/tools"
+    ]
+}

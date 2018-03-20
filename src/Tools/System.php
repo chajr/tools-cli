@@ -1,0 +1,5 @@
+<?php
+
+//suspend
+//hiberante
+//etc
