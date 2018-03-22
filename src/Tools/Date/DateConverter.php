@@ -1,148 +1,151 @@
-#!/usr/bin/env php
-
 <?php
 
-$mainDir = rtrim($argv[1], '/');
-$destination = rtrim($argv[2], '/');
-$list = glob($mainDir . '/*');
-$count = 0;
-$filenameCollision = [];
-$contentCollision = [];
+namespace ToolsCli\Tools\Date;
 
-foreach ($list as $item) {
-    $file = new SplFileInfo($item);
+use Symfony\Component\Console\Command\Command;
 
-    if (!$file->isFile()) {
-        continue;
-    }
+class DateConverter extends Command
+{
+    public function __construct()
+    {
+        parent::__construct();
+        echo __CLASS__ . "\n";
+        return;
+        $mainDir = rtrim($argv[1], '/');
+        $destination = rtrim($argv[2], '/');
+        $list = glob($mainDir . '/*');
+        $count = 0;
+        $filenameCollision = [];
+        $contentCollision = [];
 
-    $hash = md5(file_get_contents($item));
+        foreach ($list as $item) {
+            $file = new SplFileInfo($item);
 
-    if (in_array($hash, $contentCollision, true)) {
-        echo colorizeShell('red', 'content collision detected: ');
-        echo colorizeShell('red_label', $mainDir . '/' . $file->getBasename());
-        echo "\n";
-        continue;
-    }
+            if (!$file->isFile()) {
+                continue;
+            }
 
-    $contentCollision[] = $hash;
+            $hash = md5(file_get_contents($item));
 
-    echo colorizeShell('brown', $file->getBasename());
-    echo ' - ';
-    echo colorizeShell('brown', date('Y-m-d_H:i:s', $file->getMTime()));
-    echo ' - ';
-    echo colorizeShell('red', ++$count);
+            if (in_array($hash, $contentCollision, true)) {
+                echo colorizeShell('red', 'content collision detected: ');
+                echo colorizeShell('red_label', $mainDir . '/' . $file->getBasename());
+                echo "\n";
+                continue;
+            }
 
-    $newName = date('Y-m-d_H:i:s', $file->getMTime());
-    $newPath = $destination . '/' . $newName;
+            $contentCollision[] = $hash;
 
-    if (file_exists($newPath . '.' . $file->getExtension())) {
-        if (!isset($filenameCollision[$newPath])) {
-            $filenameCollision[$newPath] = 0;
+            echo colorizeShell('brown', $file->getBasename());
+            echo ' - ';
+            echo colorizeShell('brown', date('Y-m-d_H:i:s', $file->getMTime()));
+            echo ' - ';
+            echo colorizeShell('red', ++$count);
+
+            $newName = date('Y-m-d_H:i:s', $file->getMTime());
+            $newPath = $destination . '/' . $newName;
+
+            if (file_exists($newPath . '.' . $file->getExtension())) {
+                if (!isset($filenameCollision[$newPath])) {
+                    $filenameCollision[$newPath] = 0;
+                }
+
+                $newPath .= '-' . ++$filenameCollision[$newPath];
+
+                echo "\n";
+                echo colorizeShell('red', 'collision detected: ');
+                echo colorizeShell('red_label', $newPath);
+            }
+
+            echo "\n";
+            $status = copy(
+                $mainDir . '/' . $file->getBasename(),
+                $newPath . '.' . $file->getExtension()
+            ) ? colorizeShell('green', 'copy success') : colorizeShell('reed', 'copy fail');
+
+            echo $status;
+
+            echo "\n";
         }
 
-        $newPath .= '-' . ++$filenameCollision[$newPath];
-
-        echo "\n";
-        echo colorizeShell('red', 'collision detected: ');
-        echo colorizeShell('red_label', $newPath);
+//        return $list['start'] . $string . $list['end'];
     }
 
-    echo "\n";
-    $status = copy(
-        $mainDir . '/' . $file->getBasename(),
-        $newPath . '.' . $file->getExtension()
-    ) ? colorizeShell('green', 'copy success') : colorizeShell('reed', 'copy fail');
+    protected function colorizeShell($type, $string)
+    {
+        $list = [
+            'start' => '',
+            'end'   => "\033[0m"
+        ];
 
-    echo $status;
+        switch ($type) {
+            case 'red':
+                $list['start'] = "\033[0;31m";
+                break;
 
-    echo "\n";
-}
+            case 'green':
+                $list['start'] = "\033[0;32m";
+                break;
 
+            case 'brown':
+                $list['start'] = "\033[0;33m";
+                break;
 
-/**
- * apply colors for shell
- *
- * @param string $type
- * @param string $string
- * @return string
- */
-function colorizeShell($type, $string)
-{
-    $list = [
-        'start' => '',
-        'end'   => "\033[0m"
-    ];
+            case 'black':
+                $list['start'] = "\033[0;30m";
+                break;
 
-    switch ($type) {
-        case 'red':
-            $list['start'] = "\033[0;31m";
-            break;
+            case 'blue':
+                $list['start'] = "\033[0;34m";
+                break;
 
-        case 'green':
-            $list['start'] = "\033[0;32m";
-            break;
+            case 'magenta':
+                $list['start'] = "\033[0;35m";
+                break;
 
-        case 'brown':
-            $list['start'] = "\033[0;33m";
-            break;
+            case 'cyan':
+                $list['start'] = "\033[0;36m";
+                break;
 
-        case 'black':
-            $list['start'] = "\033[0;30m";
-            break;
+            case 'white':
+                $list['start'] = "\033[0;37m";
+                break;
 
-        case 'blue':
-            $list['start'] = "\033[0;34m";
-            break;
+            case 'red_label':
+                $list['start'] = "\033[41m";
+                break;
 
-        case 'magenta':
-            $list['start'] = "\033[0;35m";
-            break;
+            case 'brown_label':
+                $list['start'] = "\033[43m";
+                break;
 
-        case 'cyan':
-            $list['start'] = "\033[0;36m";
-            break;
+            case 'black_label':
+                $list['start'] = "\033[40m";
+                break;
 
-        case 'white':
-            $list['start'] = "\033[0;37m";
-            break;
+            case 'green_label':
+                $list['start'] = "\033[42m";
+                break;
 
-        case 'red_label':
-            $list['start'] = "\033[41m";
-            break;
+            case 'blue_label':
+                $list['start'] = "\033[44m";
+                break;
 
-        case 'brown_label':
-            $list['start'] = "\033[43m";
-            break;
+            case 'magenta_label':
+                $list['start'] = "\033[45m";
+                break;
 
-        case 'black_label':
-            $list['start'] = "\033[40m";
-            break;
+            case 'cyan_label':
+                $list['start'] = "\033[46m";
+                break;
 
-        case 'green_label':
-            $list['start'] = "\033[42m";
-            break;
+            case 'white_label':
+                $list['start'] = "\033[47m";
+                break;
 
-        case 'blue_label':
-            $list['start'] = "\033[44m";
-            break;
-
-        case 'magenta_label':
-            $list['start'] = "\033[45m";
-            break;
-
-        case 'cyan_label':
-            $list['start'] = "\033[46m";
-            break;
-
-        case 'white_label':
-            $list['start'] = "\033[47m";
-            break;
-
-        default:
-            $list['end'] = '';
-            break;
+            default:
+                $list['end'] = '';
+                break;
+        }
     }
-
-    return $list['start'] . $string . $list['end'];
 }

@@ -1,9 +1,10 @@
-#!/usr/bin/env php
 <?php
 
-new RandomFile($argv);
+namespace ToolsCli\Tools\Fs;
 
-class RandomFile
+use Symfony\Component\Console\Command\Command;
+
+class RandomFile extends Command
 {
     /**
      * @var array
@@ -17,8 +18,11 @@ class RandomFile
      * @throws ErrorException
      * @throws Exception
      */
-    public function __construct(array $args)
+    public function __construct()
     {
+        parent::__construct();
+        echo __CLASS__ . "\n";
+        return;
         $allFiles = [];
         $storedFiles = [];
 
