@@ -3,6 +3,8 @@
 namespace ToolsCli\Tools\Date;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class DateConverter extends Command
 {
@@ -69,6 +71,24 @@ class DateConverter extends Command
         }
 
 //        return $list['start'] . $string . $list['end'];
+    }
+
+    protected function configure() : void
+    {
+        $this->setName('date:date-converter')
+            ->setDescription('Convert files into files named by create time.')
+            ->setHelp('');
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     * @throws \InvalidArgumentException
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        
     }
 
     protected function colorizeShell($type, $string)
