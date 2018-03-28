@@ -1,17 +1,16 @@
 <?php
 
-namespace ToolsCli\Tools\Date;
+namespace ToolsCli\Tools\Fs;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class DateConverter extends Command
+class NameToDate extends Command
 {
     public function __construct()
     {
         parent::__construct();
-        echo __CLASS__ . "\n";
         return;
         $mainDir = rtrim($argv[1], '/');
         $destination = rtrim($argv[2], '/');
