@@ -32,12 +32,15 @@ class Commands extends Container
 
         parent::__construct(['data' => $this->readAllCommandTools()]);
 
+        $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
+
         //set default command
 //        $this->set('default_name', 'helper');
     }
 
     /**
      * @return array
+     * @todo read tools commands from vendor (recognize by special namespace)
      */
     protected function readAllCommandTools() : array
     {
