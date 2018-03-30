@@ -2,25 +2,62 @@
 
 namespace ToolsCli\Tools\Fs;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\{
+    Command\Command,
+    Input\InputInterface,
+    Input\InputArgument,
+    Output\OutputInterface,
+};
+use ToolsCli\Console\Display\Style;
 
 class NameToDate extends Command
 {
-    public function __construct()
+    protected function configure() : void
     {
-        parent::__construct();
-        return;
-        $mainDir = rtrim($argv[1], '/');
-        $destination = rtrim($argv[2], '/');
+        $this->setName('fs:name-to-date')
+            ->setDescription('Convert files into files named by create time.')
+            ->setHelp('');
+
+        $this->addArgument(
+            'source',
+            InputArgument::REQUIRED,
+            'source files to convert'
+        );
+
+        $this->addArgument(
+            'destination',
+            InputArgument::REQUIRED,
+            'destination of renamed files'
+        );
+
+        $this->addOption(
+            'date-format',
+            'd',
+            InputArgument::OPTIONAL,
+            'date() accepted format',
+            'Y-m-d_H:i:s'
+        );
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     * @throws \InvalidArgumentException
+     */
+    protected function execute(InputInterface $input, OutputInterface $output) : void
+    {
+        $style = new Style($input, $output, $this);
+
+        $mainDir = rtrim($input->getArgument('source'), '/');
+        $destination = rtrim($input->getArgument('destination'), '/');
         $list = glob($mainDir . '/*');
         $count = 0;
         $filenameCollision = [];
         $contentCollision = [];
 
         foreach ($list as $item) {
-            $file = new SplFileInfo($item);
+            $file = new \SplFileInfo($item);
 
             if (!$file->isFile()) {
                 continue;
@@ -28,22 +65,24 @@ class NameToDate extends Command
 
             $hash = md5(file_get_contents($item));
 
-            if (in_array($hash, $contentCollision, true)) {
-                echo colorizeShell('red', 'content collision detected: ');
-                echo colorizeShell('red_label', $mainDir . '/' . $file->getBasename());
-                echo "\n";
+            if (\in_array($hash, $contentCollision, true)) {
+                $style->warningMessage('content collision detected: ');
+                $style->warningMessage($mainDir . '/' . $file->getBasename());
+                $style->newLine();
                 continue;
             }
 
             $contentCollision[] = $hash;
 
-            echo colorizeShell('brown', $file->getBasename());
-            echo ' - ';
-            echo colorizeShell('brown', date('Y-m-d_H:i:s', $file->getMTime()));
-            echo ' - ';
-            echo colorizeShell('red', ++$count);
+            $style->infoMessage(
+                $file->getBasename()
+                . ' -> '
+                . date($input->getOption('date-format'), $file->getMTime())
+                . ' - '
+                . ++$count
+            );
 
-            $newName = date('Y-m-d_H:i:s', $file->getMTime());
+            $newName = date($input->getOption('date-format'), $file->getMTime());
             $newPath = $destination . '/' . $newName;
 
             if (file_exists($newPath . '.' . $file->getExtension())) {
@@ -53,118 +92,21 @@ class NameToDate extends Command
 
                 $newPath .= '-' . ++$filenameCollision[$newPath];
 
-                echo "\n";
-                echo colorizeShell('red', 'collision detected: ');
-                echo colorizeShell('red_label', $newPath);
+                $style->newLine();
+                $style->warningMessage('collision detected: ');
+                $style->warningMessage($newPath);
             }
 
-            echo "\n";
-            $status = copy(
+            $style->newLine();
+            copy(
                 $mainDir . '/' . $file->getBasename(),
                 $newPath . '.' . $file->getExtension()
-            ) ? colorizeShell('green', 'copy success') : colorizeShell('reed', 'copy fail');
+            ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
-            echo $status;
-
-            echo "\n";
-        }
-
-//        return $list['start'] . $string . $list['end'];
-    }
-
-    protected function configure() : void
-    {
-        $this->setName('date:date-converter')
-            ->setDescription('Convert files into files named by create time.')
-            ->setHelp('');
-    }
-
-    /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return int|null|void
-     * @throws \InvalidArgumentException
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        
-    }
-
-    protected function colorizeShell($type, $string)
-    {
-        $list = [
-            'start' => '',
-            'end'   => "\033[0m"
-        ];
-
-        switch ($type) {
-            case 'red':
-                $list['start'] = "\033[0;31m";
-                break;
-
-            case 'green':
-                $list['start'] = "\033[0;32m";
-                break;
-
-            case 'brown':
-                $list['start'] = "\033[0;33m";
-                break;
-
-            case 'black':
-                $list['start'] = "\033[0;30m";
-                break;
-
-            case 'blue':
-                $list['start'] = "\033[0;34m";
-                break;
-
-            case 'magenta':
-                $list['start'] = "\033[0;35m";
-                break;
-
-            case 'cyan':
-                $list['start'] = "\033[0;36m";
-                break;
-
-            case 'white':
-                $list['start'] = "\033[0;37m";
-                break;
-
-            case 'red_label':
-                $list['start'] = "\033[41m";
-                break;
-
-            case 'brown_label':
-                $list['start'] = "\033[43m";
-                break;
-
-            case 'black_label':
-                $list['start'] = "\033[40m";
-                break;
-
-            case 'green_label':
-                $list['start'] = "\033[42m";
-                break;
-
-            case 'blue_label':
-                $list['start'] = "\033[44m";
-                break;
-
-            case 'magenta_label':
-                $list['start'] = "\033[45m";
-                break;
-
-            case 'cyan_label':
-                $list['start'] = "\033[46m";
-                break;
-
-            case 'white_label':
-                $list['start'] = "\033[47m";
-                break;
-
-            default:
-                $list['end'] = '';
-                break;
+            $style->newLine();
+            
+            
+            //summary
         }
     }
 }
