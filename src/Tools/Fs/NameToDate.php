@@ -56,6 +56,9 @@ class NameToDate extends Command
         $filenameCollision = [];
         $contentCollision = [];
 
+        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . count($list) . '</>');
+        $style->newLine();
+
         foreach ($list as $item) {
             $file = new \SplFileInfo($item);
 
@@ -66,9 +69,9 @@ class NameToDate extends Command
             $hash = md5(file_get_contents($item));
 
             if (\in_array($hash, $contentCollision, true)) {
-                $style->warningMessage('content collision detected: ');
-                $style->warningMessage($mainDir . '/' . $file->getBasename());
-                $style->newLine();
+                $style->warningMessage(
+                    'content collision detected: <comment>' . $mainDir . '/' . $file->getBasename() . '/<comment>'
+                );
                 continue;
             }
 
@@ -78,8 +81,9 @@ class NameToDate extends Command
                 $file->getBasename()
                 . ' -> '
                 . date($input->getOption('date-format'), $file->getMTime())
-                . ' - '
+                . ' - <fg=red>'
                 . ++$count
+                . '</>'
             );
 
             $newName = date($input->getOption('date-format'), $file->getMTime());
@@ -92,21 +96,18 @@ class NameToDate extends Command
 
                 $newPath .= '-' . ++$filenameCollision[$newPath];
 
-                $style->newLine();
-                $style->warningMessage('collision detected: ');
-                $style->warningMessage($newPath);
+                $style->warningMessage('collision detected: <fg=red>' . $newPath . '</>');
             }
 
-            $style->newLine();
             copy(
                 $mainDir . '/' . $file->getBasename(),
                 $newPath . '.' . $file->getExtension()
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
-            $style->newLine();
-            
-            
-            //summary
         }
+
+        $style->newLine();
+        $style->okMessage('Converted files: <info>' . $count . '</info>');
+        $style->newLine();
     }
 }
