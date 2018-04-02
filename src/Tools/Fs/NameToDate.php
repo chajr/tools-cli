@@ -105,6 +105,9 @@ class NameToDate extends Command
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
         }
+        
+        /** @todo time and memory usage */
+        /** @todo convert extension to lower case */
 
         $style->newLine();
         $style->okMessage('Converted files: <info>' . $count . '</info>');
