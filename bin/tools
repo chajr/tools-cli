@@ -17,7 +17,7 @@ $application = new Application;
 
 $application->setName($composer->description);
 $application->setVersion($composer->version);
-$application->addCommands($command);
-$application->setDefaultCommand($command->get('default_name'));   //??
+$application->addCommands($command->toArray());
+$application->setDefaultCommand($command->get(ToolsCli\Console\DefaultCommand::class)->getName());
 
 $application->run();
