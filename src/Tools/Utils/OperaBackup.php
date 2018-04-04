@@ -8,11 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class OperaBackup extends Command
 {
-    public function __construct()
-    {
-        parent::__construct();
-        echo __CLASS__ . "\n";
-    }
     #!/usr/bin/env bash
     
     //fileName=`date +"%d.%m.%Y-%T"`

@@ -8,11 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class System extends Command
 {
-    public function __construct()
-    {
-        parent::__construct();
-        echo __CLASS__ . "\n";
-    }
     //suspend
     //hiberante
     //etc

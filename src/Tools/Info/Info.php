@@ -8,12 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Info extends Command
 {
-    public function __construct()
-    {
-        parent::__construct();
-        echo __CLASS__ . "\n";
-    }
-
     protected function configure() : void
     {
         $this->setName('info:info')
