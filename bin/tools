@@ -7,17 +7,20 @@ require_once $mainDir . 'vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
 use ToolsCli\Console\Commands;
+use ToolsCli\Console\Alias;
 
 $composer = json_decode(
     file_get_contents($mainDir . 'composer.json')
 );
 
+$alias = new Alias($argv);
 $command = new Commands;
 $application = new Application;
 
 $application->setName($composer->description);
 $application->setVersion($composer->version);
 $application->addCommands($command->toArray());
-$application->setDefaultCommand($command->get(ToolsCli\Console\DefaultCommand::class)->getName());
+
+$alias->setCommand($application, $command);
 
 $application->run();
