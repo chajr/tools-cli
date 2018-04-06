@@ -56,7 +56,7 @@ class NameToDate extends Command
         $filenameCollision = [];
         $contentCollision = [];
 
-        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . count($list) . '</>');
+        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . \count($list) . '</>');
         $style->newLine();
 
         foreach ($list as $item) {
@@ -99,15 +99,18 @@ class NameToDate extends Command
                 $style->warningMessage('collision detected: <fg=red>' . $newPath . '</>');
             }
 
+            /** @todo use Symfony:fs  */
             copy(
                 $mainDir . '/' . $file->getBasename(),
                 $newPath . '.' . $file->getExtension()
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
         }
-        
+
         /** @todo time and memory usage */
         /** @todo convert extension to lower case */
+        /** @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html */
+        /** @todo implement https://github.com/hollodotme/fast-cgi-client */
 
         $style->newLine();
         $style->okMessage('Converted files: <info>' . $count . '</info>');
