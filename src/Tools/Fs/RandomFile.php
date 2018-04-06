@@ -2,9 +2,12 @@
 
 namespace ToolsCli\Tools\Fs;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\{
+    Command\Command,
+    Input\InputInterface,
+    Input\InputArgument,
+    Output\OutputInterface,
+};
 
 class RandomFile extends Command
 {
@@ -13,55 +16,89 @@ class RandomFile extends Command
      */
     protected $config = [];
 
-    /**
-     * randomFile constructor.
-     *
-     * @param array $args
-     * @throws ErrorException
-     * @throws Exception
-     */
-    public function __construct()
+    protected function configure() : void
     {
-        parent::__construct();
-        echo __CLASS__ . "\n";
-        return;
+        $this->setName('fs:random-file')
+            ->setDescription('Return random file path.')
+            ->setHelp('');
+
+        $this->addArgument(
+            'group',
+            InputArgument::OPTIONAL,
+            'directory group to get random file'
+        );
+
+        $this->addOption(
+            'config',
+            'c',
+            InputArgument::OPTIONAL,
+            'additional configuration for generation and storage results',
+            '~/.config/tools-cli/etc/randomFile.json'
+        );
+
+        $this->addOption(
+            'skip-storage',
+            's',
+            null,
+            'don\'t save generated file in result file'
+        );
+
+        $this->addOption(
+            'dir',
+            'd',
+            null,
+            'force directory to get random file (force skip-storage option)'
+        );
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     * @throws \InvalidArgumentException
+     * @throws \ErrorException
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
         $allFiles = [];
         $storedFiles = [];
 
-        $config = $args[2] ?? './etc/config.json';
+        $config = $input->getOption('config');
 
         if (!file_exists($config)) {
-            throw new ErrorException('Missing configuration file: ' . $config);
+            throw new \ErrorException('Missing configuration file: ' . $config);
         }
 
         $configData = file_get_contents($config);
         $this->config = json_decode($configData, true);
 
         if (!file_exists($this->config['config']['storage'])) {
-            throw new ErrorException('Missing storage file: ' . $this->config['config']['storage']);
+            throw new \ErrorException('Missing storage file: ' . $this->config['config']['storage']);
         }
 
-        $group = $args[1] ?? key($this->config['directories']);
+        $group = $input->getArgument('directory') ?? key($this->config['directories']);
 
         foreach ($this->config['directories'][$group] as $directory) {
             $paths = self::returnPaths(self::readDirectory($directory, true));
             $allFiles += $paths['file'];
         }
 
-        $generated = file_get_contents($this->config['config']['storage']);
-        $storage = json_decode($generated, true);
+        if (!$input->getOption('skip-storage')) {
+            $generated = file_get_contents($this->config['config']['storage']);
+            $storage = json_decode($generated, true);
 
-        foreach ($storage as $files) {
-            $storedFiles[] = $files['path'];
+            foreach ($storage as $files) {
+                $storedFiles[] = $files['path'];
+            }
+
+            $allFiles = array_values(array_diff($allFiles, $storedFiles));
         }
 
-        $cleared = array_values(array_diff($allFiles, $storedFiles));
-
-        if ($this->getImportantFile()) {
+        if ($this->hasImportantFile()) {
             $importantList = [];
             $prefix = $this->config['config']['importantFilePrefix'];
 
-            foreach ($cleared as $file) {
+            foreach ($allFiles as $file) {
                 $fileInfo = new \SplFileInfo($file);
                 $isImportant = preg_match("/^$prefix.*/", $fileInfo->getFilename());
 
@@ -71,42 +108,26 @@ class RandomFile extends Command
             }
 
             if (!empty($importantList)) {
-                $cleared = $importantList;
+                $allFiles = $importantList;
             }
         }
 
-        $numberOfFiles = count($cleared);
+        $numberOfFiles = \count($allFiles);
         $rand = random_int(1, $numberOfFiles);
 
-        $randFile = $this->escape($cleared[$rand -1]);
+        $randFile = $this->escape($allFiles[$rand -1]);
 
-        $storage[] = [
-            'date' =>date('d-m-Y H:i:s'),
-            'path' => $randFile,
-        ];
+        if (!$input->getOption('skip-storage')) {
+            $storage[] = [
+                'date' => date('d-m-Y H:i:s'),
+                'path' => $randFile,
+            ];
 
-        $newStorage = json_encode($storage, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        file_put_contents($this->config['config']['storage'], $newStorage);
+            $newStorage = json_encode($storage, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            file_put_contents($this->config['config']['storage'], $newStorage);
+        }
 
         echo '"' . $randFile . '"';
-    }
-
-    protected function configure() : void
-    {
-        $this->setName('fs:random-file')
-            ->setDescription('Return random file path.')
-            ->setHelp('');
-    }
-
-    /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return int|null|void
-     * @throws \InvalidArgumentException
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-
     }
 
     /**
@@ -120,9 +141,9 @@ class RandomFile extends Command
 
     /**
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
-    protected function getImportantFile() : bool
+    protected function hasImportantFile() : bool
     {
         $randCheck = $this->config['config']['importantFileCheckout'];
 
@@ -142,7 +163,7 @@ class RandomFile extends Command
      *
      * @param string $path
      * @param boolean $whole
-     * @return array|null
+     * @return array
      * @example readDirectory('dir/some_dir')
      * @example readDirectory('dir/some_dir', TRUE)
      * @example readDirectory(); - read MAIN_PATH destination
@@ -155,9 +176,9 @@ class RandomFile extends Command
             return $list;
         }
 
-        $iterator = new DirectoryIterator($path);
+        $iterator = new \DirectoryIterator($path);
 
-        /** @var DirectoryIterator $element */
+        /** @var \DirectoryIterator $element */
         foreach ($iterator as $element) {
             if ($element->isDot()) {
                 continue;
@@ -199,6 +220,7 @@ class RandomFile extends Command
         foreach ($array as $path => $fileInfo) {
             if (is_dir($path)) {
                 $list = self::returnPaths((array)$fileInfo);
+
                 foreach ($list as $element => $value) {
                     if ($element === 'file') {
                         foreach ($value as $file) {
@@ -216,7 +238,7 @@ class RandomFile extends Command
                 $pathList['dir'][] = $path;
 
             } else {
-                /** @var DirectoryIterator $fileInfo */
+                /** @var \DirectoryIterator $fileInfo */
                 $pathList['file'][] = $fileInfo->getRealPath();
             }
         }
