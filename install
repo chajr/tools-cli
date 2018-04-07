@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+$mainDir = __DIR__ . '/../';
+
+require_once $mainDir . 'vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use ToolsCli\Console\Installer;
+
+$composer = json_decode(
+    file_get_contents($mainDir . 'composer.json')
+);
+
+$application = new Application;
+$installer = new Installer;
+
+$application->setName($composer->description . ' Installer.');
+$application->setVersion($composer->version);
+$application->add($installer);
+
+$application->setDefaultCommand($installer->getName(), true);
+
+$application->run();
