@@ -29,10 +29,7 @@ class Installer extends Command
         $fileSystem = new Filesystem;
 
         $fileSystem->copy('etc/', '~/.config/tools-cli/etc');
-        
-        //rename dist to configs
-        //mkdir storage
-        //mkdir log dir
-        //copy build
+        $fileSystem->mkdir('~/.config/tools-cli/storage');
+        $fileSystem->mkdir('~/.config/tools-cli/log');
     }
 }
