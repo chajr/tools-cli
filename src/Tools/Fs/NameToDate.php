@@ -3,19 +3,21 @@
 namespace ToolsCli\Tools\Fs;
 
 use Symfony\Component\Console\{
-    Command\Command,
     Input\InputInterface,
     Input\InputArgument,
     Output\OutputInterface,
 };
 use ToolsCli\Console\Display\Style;
+use ToolsCli\Console\Command;
 
 class NameToDate extends Command
 {
+    protected $commandName = 'fs:name-to-date';
+
     protected function configure() : void
     {
-        $this->setName('fs:name-to-date')
-            ->setDescription('Convert files into files named by create time.')
+        $this->setName($this->commandName)
+            ->setDescription($this->getAlias() . 'Convert files into files named by create time.')
             ->setHelp('');
 
         $this->addArgument(
@@ -70,7 +72,7 @@ class NameToDate extends Command
 
             if (\in_array($hash, $contentCollision, true)) {
                 $style->warningMessage(
-                    'content collision detected: <comment>' . $mainDir . '/' . $file->getBasename() . '/<comment>'
+                    'content collision detected: <comment>' . $mainDir . '/' . $file->getBasename() . '</comment>'
                 );
                 continue;
             }

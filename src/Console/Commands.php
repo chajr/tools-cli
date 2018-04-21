@@ -19,15 +19,21 @@ class Commands extends Container
     protected $log;
 
     /**
+     * @var Alias
+     */
+    protected $alias;
+
+    /**
      * @var Event
      */
     protected $event;
 
-    public function __construct()
+    public function __construct(Alias $alias)
     {
         //read configuration
 //        $this->log = new Log([]);
 //        $this->event = new Event([]);
+        $this->alias = $alias;
         $this->register = new Register([]);
 
         parent::__construct(['data' => $this->readAllCommandTools()]);
@@ -66,6 +72,6 @@ class Commands extends Container
      */
     protected function registerCommandTool(string $namespace) : Command
     {
-        return $this->register->factory($namespace);
+        return $this->register->factory($namespace, [$namespace, $this->alias]);
     }
 }

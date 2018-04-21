@@ -12,11 +12,17 @@ class Alias
     protected $alias = '';
 
     /**
+     * @var string
+     */
+    protected $aliases = [];
+
+    /**
      * @param array $args
      */
     public function __construct(array &$args)
     {
         $aliases = $this->loadAliases();
+        $this->aliases = array_flip($aliases);
 
         if (\array_key_exists($args[1], $aliases)) {
             $this->alias = $aliases[$args[1]];
@@ -27,9 +33,18 @@ class Alias
     /**
      * @return string
      */
-    public function getAlias() : string
+    public function getAliases() : string
     {
         return $this->alias;
+    }
+
+    /**
+     * @param string
+     * @return string|null
+     */
+    public function getAlias(string $commandName) : ?string
+    {
+        return $this->aliases[$commandName] ?? null;
     }
 
     /**

@@ -14,7 +14,7 @@ $composer = json_decode(
 );
 
 $alias = new Alias($argv);
-$command = new Commands;
+$command = new Commands($alias);
 $application = new Application;
 
 $application->setName($composer->description);
