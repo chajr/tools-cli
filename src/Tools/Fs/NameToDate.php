@@ -39,6 +39,13 @@ class NameToDate extends Command
             'date() accepted format',
             'Y-m-d_H:i:s'
         );
+
+        $this->addOption(
+            'format-check',
+            'c',
+            null,
+            'check some defined datetime in filename as valid creation time'
+        );
     }
 
     /**
@@ -79,16 +86,22 @@ class NameToDate extends Command
 
             $contentCollision[] = $hash;
 
+            if ($input->getOption('format-check')) {
+                $fileCreationDate = $this->checkFormat($file);
+            } else {
+                $fileCreationDate = $file->getMTime();
+            }
+
             $style->infoMessage(
                 $file->getBasename()
                 . ' -> '
-                . date($input->getOption('date-format'), $file->getMTime())
+                . date($input->getOption('date-format'), $fileCreationDate)
                 . ' - <fg=red>'
                 . ++$count
                 . '</>'
             );
 
-            $newName = date($input->getOption('date-format'), $file->getMTime());
+            $newName = date($input->getOption('date-format'), $fileCreationDate);
             $newPath = $destination . '/' . $newName;
 
             if (file_exists($newPath . '.' . $file->getExtension())) {
@@ -104,18 +117,60 @@ class NameToDate extends Command
             /** @todo use Symfony:fs  */
             copy(
                 $mainDir . '/' . $file->getBasename(),
-                $newPath . '.' . $file->getExtension()
+                $newPath . '.' . strtolower($file->getExtension())
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
         }
 
         /** @todo time and memory usage */
-        /** @todo convert extension to lower case */
         /** @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html */
         /** @todo implement https://github.com/hollodotme/fast-cgi-client */
 
         $style->newLine();
         $style->okMessage('Converted files: <info>' . $count . '</info>');
         $style->newLine();
+    }
+
+    /**
+     * @param \SplFileInfo $file
+     * @return int
+     */
+    protected function checkFormat(\SplFileInfo $file) : int
+    {
+        $formats = $this->fileFormats();
+
+        foreach ($formats as $format) {
+            $matches = [];
+
+            if (preg_match("#{$format[0]}#", $file->getBasename(), $matches)) {
+                return $format[1]($matches[0]);
+            }
+        }
+
+        return $file->getMTime();
+    }
+
+    protected function fileFormats() : array
+    {
+        return [
+            [
+                '^[\d]{8}_[\d]{6}',
+                function ($name) {
+                    return strtotime(
+                        str_replace('_', '', $name)
+                    );
+                }
+            ],
+            [
+                '^VID-[\d]{8}-WA[\d]{4}',
+                function ($name) {
+                    $strings = explode('-', $name);
+
+                    return strtotime(
+                        str_replace('_', '', $strings[1])
+                    );
+                }
+            ]
+        ];
     }
 }
