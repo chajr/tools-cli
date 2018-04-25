@@ -24,3 +24,5 @@ $application->addCommands($command->toArray());
 $alias->setCommand($application, $command);
 
 $application->run();
+/** @todo time and memory usage */
+
