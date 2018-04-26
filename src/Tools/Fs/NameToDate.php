@@ -122,7 +122,6 @@ class NameToDate extends Command
 
         }
 
-        /** @todo time and memory usage */
         /** @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html */
         /** @todo implement https://github.com/hollodotme/fast-cgi-client */
 
