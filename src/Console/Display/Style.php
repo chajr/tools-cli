@@ -113,7 +113,7 @@ class Style extends SymfonyStyle
      */
     public function align($strLength, $align) : string
     {
-        if (is_string($strLength)) {
+        if (\is_string($strLength)) {
             $strLength = mb_strlen($strLength);
         }
 
