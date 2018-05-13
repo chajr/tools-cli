@@ -33,6 +33,7 @@ class Commands extends Container
         //read configuration
 //        $this->log = new Log([]);
 //        $this->event = new Event([]);
+        //create register (bootstrap function)
         $this->alias = $alias;
         $this->register = new Register([]);
 

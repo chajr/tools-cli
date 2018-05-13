@@ -13,6 +13,8 @@ class System extends Command
     //etc
     //systemctl suspend -i //after period
     //shutdown -h $time
+    
+    //set wait time
 
     protected function configure() : void
     {
