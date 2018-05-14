@@ -2,9 +2,12 @@
 
 namespace ToolsCli\Tools\System;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\{
+    Input\InputInterface,
+    Output\OutputInterface,
+};
+use ToolsCli\Console\Display\Style;
+use ToolsCli\Console\Command;
 
 class History extends Command
 {
@@ -13,13 +16,13 @@ class History extends Command
         $this->setName('system:history')
             ->setDescription('Show zsh history in some specified formats.')
             ->setHelp('');
-        
+
         //limit (head, tail)
-        //part
+        //part (commands 10-100)
         //time format
         //time period
         //show mem and time usage
-        //show counter (summ all comands to set propper counter format)
+        //add try/catch for each iteration, display error at end of history
     }
 
     /**
@@ -30,22 +33,59 @@ class History extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $lineCount = 1;
         $history = shell_exec('cat ~/.zsh_history');
         $rows = explode("\n", $history);
+        $allCommandsLength = \strlen(count($rows));
+        $style = new Style($input, $output, $this);
+        $errors = [];
 
         foreach ($rows as $row) {
-            $matches = [];
-            $expression = explode(':0;', $row);
-            $dateTimeExpression = preg_match('#^: [\d]+#', reset($expression), $matches);
+            try {
+                $matches = [];
+                $expression = explode(':0;', $row);
+                $dateTimeExpression = preg_match('#^: [\d]+#', reset($expression), $matches);
 
-            if (!$dateTimeExpression) {
-                continue;
+                if (!$dateTimeExpression) {
+                    continue;
+                }
+
+                $dateTime = str_replace([': ', ':'], '', reset($matches));
+                $date = strftime('%Y-%m-%d %H:%M:%S', $dateTime);
+
+                $lineNumber = $this->formatLineCounter($lineCount, $allCommandsLength);
+                $style->writeln("[<comment>$lineNumber</comment>; <info>$date</info>] " . $expression[1]);
+            } catch (\Exception $exception) {
+                $errors[$lineCount] = $exception;
+            } finally {
+                $lineCount++;
             }
-
-            $dateTime = str_replace([': ', ':'], '', reset($matches));
-
-            //output
-            echo strftime('[%Y-%m-%d %H:%M:%S]', $dateTime) . ' ' . $expression[1] . "\n";
         }
+
+        if (!empty($errors)) {
+            $style->newLine();
+            $style->writeln('<comment>Errors during process some lines:</comment>');
+        }
+        foreach ($errors as $line => $error) {
+            $style->writeln("<error>Line: $line; " . $error->getMessage() . '</error>');
+        }
+    }
+
+    /**
+     * @param int $current
+     * @param int $length
+     * @return string
+     */
+    protected function formatLineCounter(int $current, int $length) : string
+    {
+        $currentLength = \strlen($current);
+        $diff = $length - $currentLength;
+        $out = '';
+
+        for ($i = 0; $i < $diff; $i++) {
+            $out .= ' ';
+        }
+
+        return $out . $current;
     }
 }
