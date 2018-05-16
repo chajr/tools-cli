@@ -23,6 +23,14 @@ class History extends Command
         //time period
         //show mem and time usage
         //add try/catch for each iteration, display error at end of history
+        //unique + sort
+
+        $this->addOption(
+            'command-only',
+            'c',
+            null,
+            'Show only command.'
+        );
     }
 
     /**
@@ -42,6 +50,9 @@ class History extends Command
 
         foreach ($rows as $row) {
             try {
+//                if (in_array($lineCount, [5, 123, 4545, 3434])) {
+//                    throw new \Exception('effddfsdsfs');
+//                }
                 $matches = [];
                 $expression = explode(':0;', $row);
                 $dateTimeExpression = preg_match('#^: [\d]+#', reset($expression), $matches);
@@ -50,11 +61,16 @@ class History extends Command
                     continue;
                 }
 
+                $adds = '';
                 $dateTime = str_replace([': ', ':'], '', reset($matches));
-                $date = strftime('%Y-%m-%d %H:%M:%S', $dateTime);
+                if (!$input->getOption('command-only')) {
+                    $date = strftime('%Y-%m-%d %H:%M:%S', $dateTime);
+                    $lineNumber = $this->formatLineCounter($lineCount, $allCommandsLength);
 
-                $lineNumber = $this->formatLineCounter($lineCount, $allCommandsLength);
-                $style->writeln("[<comment>$lineNumber</comment>; <info>$date</info>] " . $expression[1]);
+                    $adds = "[<comment>$lineNumber</comment>; <info>$date</info>] ";
+                }
+
+                $style->writeln($adds . $expression[1]);
             } catch (\Exception $exception) {
                 $errors[$lineCount] = $exception;
             } finally {
