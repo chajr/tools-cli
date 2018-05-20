@@ -46,6 +46,13 @@ class NameToDate extends Command
             null,
             'check some defined datetime in filename as valid creation time'
         );
+
+        $this->addOption(
+            'exists',
+            'e',
+            null,
+            'check that all converted files exists'
+        );
     }
 
     /**
@@ -64,8 +71,12 @@ class NameToDate extends Command
         $count = 0;
         $filenameCollision = [];
         $contentCollision = [];
+        $all = \count($list);
+        $skipped = 0;
+        $newFiles = [];
+        $notExists = 0;
 
-        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . \count($list) . '</>');
+        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . $all . '</>');
         $style->newLine();
 
         foreach ($list as $item) {
@@ -78,6 +89,7 @@ class NameToDate extends Command
             $hash = md5(file_get_contents($item));
 
             if (\in_array($hash, $contentCollision, true)) {
+                $skipped++;
                 $style->warningMessage(
                     'content collision detected: <comment>' . $mainDir . '/' . $file->getBasename() . '</comment>'
                 );
@@ -98,7 +110,8 @@ class NameToDate extends Command
                 . date($input->getOption('date-format'), $fileCreationDate)
                 . ' - <fg=red>'
                 . ++$count
-                . '</>'
+                . '</> / '
+                . ($all - $skipped)
             );
 
             $newName = date($input->getOption('date-format'), $fileCreationDate);
@@ -114,7 +127,9 @@ class NameToDate extends Command
                 $style->warningMessage('collision detected: <fg=red>' . $newPath . '</>');
             }
 
-            /** @todo use Symfony:fs  */
+            $newFiles[] = $newPath . '.' . strtolower($file->getExtension());
+
+            /** @todo use Symfony:fs or bluetree-fs  */
             copy(
                 $mainDir . '/' . $file->getBasename(),
                 $newPath . '.' . strtolower($file->getExtension())
@@ -128,6 +143,19 @@ class NameToDate extends Command
         $style->newLine();
         $style->okMessage('Converted files: <info>' . $count . '</info>');
         $style->newLine();
+
+        if ($input->getOption('exists')) {
+            foreach ($newFiles as $file) {
+                if (!file_exists($file)) {
+                    $style->errorMessage("File don't exists: $file");
+                    $notExists++;
+                }
+            }
+
+            if ($notExists > 0) {
+                $style->errorMessage("Not existing files: $notExists");
+            }
+        }
     }
 
     /**
@@ -149,6 +177,9 @@ class NameToDate extends Command
         return $file->getMTime();
     }
 
+    /**
+     * @return array
+     */
     protected function fileFormats() : array
     {
         return [
@@ -161,7 +192,7 @@ class NameToDate extends Command
                 }
             ],
             [
-                '^VID-[\d]{8}-WA[\d]{4}',
+                '^(VID|IMG)-[\d]{8}-WA[\d]{4}',
                 function ($name) {
                     $strings = explode('-', $name);
 
@@ -169,7 +200,18 @@ class NameToDate extends Command
                         str_replace('_', '', $strings[1])
                     );
                 }
-            ]
+            ],
+            [
+                '^(Resized|IMG)_[\d]{8}_[\d]{4}',
+                function ($name) {
+                    $strings = explode('_', $name);
+                    $part = substr($strings[2], 0, 6);
+
+                    return strtotime(
+                        str_replace('_', '', $strings[1] . $part)
+                    );
+                }
+            ],
         ];
     }
 }
