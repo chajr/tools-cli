@@ -53,6 +53,8 @@ class NameToDate extends Command
             null,
             'check that all converted files exists'
         );
+
+        //@todo add option remove old
     }
 
     /**
@@ -68,13 +70,14 @@ class NameToDate extends Command
         $mainDir = rtrim($input->getArgument('source'), '/');
         $destination = rtrim($input->getArgument('destination'), '/');
         $list = glob($mainDir . '/*');
-        $count = 0;
         $filenameCollision = [];
         $contentCollision = [];
+        $newFiles = [];
+        $newFilesFull = [];
         $all = \count($list);
         $skipped = 0;
-        $newFiles = [];
         $notExists = 0;
+        $count = 0;
 
         $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . $all . '</>');
         $style->newLine();
@@ -116,8 +119,9 @@ class NameToDate extends Command
 
             $newName = date($input->getOption('date-format'), $fileCreationDate);
             $newPath = $destination . '/' . $newName;
+            $extension = $this->getExtension($file);
 
-            if (file_exists($newPath . '.' . $file->getExtension())) {
+            if (\in_array($newPath, $newFiles, true)) {
                 if (!isset($filenameCollision[$newPath])) {
                     $filenameCollision[$newPath] = 0;
                 }
@@ -127,12 +131,13 @@ class NameToDate extends Command
                 $style->warningMessage('collision detected: <fg=red>' . $newPath . '</>');
             }
 
-            $newFiles[] = $newPath . '.' . strtolower($file->getExtension());
+            $newFiles[] = $newPath;
+            $newFilesFull[] = $newPath . $extension;
 
             /** @todo use Symfony:fs or bluetree-fs  */
             copy(
                 $mainDir . '/' . $file->getBasename(),
-                $newPath . '.' . strtolower($file->getExtension())
+                $newPath . $extension
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
         }
@@ -145,7 +150,7 @@ class NameToDate extends Command
         $style->newLine();
 
         if ($input->getOption('exists')) {
-            foreach ($newFiles as $file) {
+            foreach ($newFilesFull as $file) {
                 if (!file_exists($file)) {
                     $style->errorMessage("File don't exists: $file");
                     $notExists++;
@@ -156,6 +161,15 @@ class NameToDate extends Command
                 $style->errorMessage("Not existing files: $notExists");
             }
         }
+    }
+
+    /**
+     * @param \SplFileInfo $file
+     * @return string
+     */
+    protected function getExtension(\SplFileInfo $file) : string
+    {
+        return '.' . strtolower($file->getExtension());
     }
 
     /**
