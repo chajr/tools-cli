@@ -34,7 +34,7 @@ class NameToDate extends Command
 
         $this->addOption(
             'date-format',
-            'd',
+            'df',
             InputArgument::OPTIONAL,
             'date() accepted format',
             'Y-m-d_H:i:s'
@@ -54,7 +54,12 @@ class NameToDate extends Command
             'check that all converted files exists'
         );
 
-        //@todo add option remove old
+        $this->addOption(
+            'delete',
+            'd',
+            null,
+            'remove converted files'
+        );
     }
 
     /**
@@ -133,13 +138,17 @@ class NameToDate extends Command
 
             $newFiles[] = $newPath;
             $newFilesFull[] = $newPath . $extension;
+            $oldFile = $mainDir . '/' . $file->getBasename();
 
             /** @todo use Symfony:fs or bluetree-fs  */
             copy(
-                $mainDir . '/' . $file->getBasename(),
+                $oldFile,
                 $newPath . $extension
             ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
 
+            if ($input->getOption('delete')) {
+                unlink($oldFile) ? $style->okMessage('delete success') : $style->errorMessage('delete fail');
+            }
         }
 
         /** @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html */
