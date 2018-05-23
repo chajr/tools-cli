@@ -18,8 +18,10 @@
         "php": ">=7.1.0",
         "symfony/filesystem": "4.0.*",
         "symfony/console": "4.0.*",
-        "bluetree-service/register": "0.2.*",
-        "bluetree-service/container": "0.1.*"
+        "bluetree-service/register": "0.3.*",
+        "bluetree-service/container": "0.1.*",
+        "bluetree-service/filesystem": "dev-develop",
+        "bluetree-service/data": "0.2.*"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",

@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3245f47aa740cb304192b7977caa6fad",
-    "content-hash": "9a9cf6a9d73c51f74a7f13786a9092f0",
+    "hash": "010d558e185589ddc96194ca592d373d",
+    "content-hash": "f6407fe32efa9e811e0f121c2d2e9fe2",
     "packages": [
         {
             "name": "bluetree-service/container",
@@ -163,17 +163,63 @@
             "time": "2018-01-22 20:13:11"
         },
         {
-            "name": "bluetree-service/register",
-            "version": "v0.2.0.1",
+            "name": "bluetree-service/filesystem",
+            "version": "dev-develop",
             "source": {
                 "type": "git",
-                "url": "https://github.com/bluetree-service/register.git",
-                "reference": "699016a24fc451869c42a2435f4452fc6782642b"
+                "url": "https://github.com/bluetree-service/filesystem.git",
+                "reference": "303a0911ba5a6e9fab8f8d75beeb20a820732ed7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/register/zipball/699016a24fc451869c42a2435f4452fc6782642b",
-                "reference": "699016a24fc451869c42a2435f4452fc6782642b",
+                "url": "https://api.github.com/repos/bluetree-service/filesystem/zipball/303a0911ba5a6e9fab8f8d75beeb20a820732ed7",
+                "reference": "303a0911ba5a6e9fab8f8d75beeb20a820732ed7",
+                "shasum": ""
+            },
+            "require": {
+                "bluetree-service/container": "0.1.*",
+                "bluetree-service/event": "0.7.*",
+                "bluetree-service/register": "0.3.*",
+                "bluetree-service/simple-log": "0.7.*",
+                "php": ">=5.6.0"
+            },
+            "require-dev": {
+                "bluetree-service/clover-reporter": "0.1.*",
+                "roave/security-advisories": "dev-master"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BlueFilesystem\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Michał Adamiak",
+                    "email": "chajr@bluetree.pl",
+                    "homepage": "https://github.com/chajr",
+                    "role": "Developer"
+                }
+            ],
+            "homepage": "https://github.com/bluetree-service/benchmark",
+            "time": "2018-05-15 18:31:49"
+        },
+        {
+            "name": "bluetree-service/register",
+            "version": "v0.3.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bluetree-service/register.git",
+                "reference": "eb3c740a53619682f343988b3b3ddbc612fa2927"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bluetree-service/register/zipball/eb3c740a53619682f343988b3b3ddbc612fa2927",
+                "reference": "eb3c740a53619682f343988b3b3ddbc612fa2927",
                 "shasum": ""
             },
             "require": {
@@ -182,8 +228,11 @@
                 "php": ">=5.6.0"
             },
             "require-dev": {
+                "bluetree-service/clover-reporter": "0.1.*",
                 "phpunit/phpunit": "4.8.35",
-                "satooshi/php-coveralls": "1.0.*"
+                "satooshi/php-coveralls": "1.0.*",
+                "symfony/console": "3.4.*",
+                "symfony/filesystem": "3.4.*"
             },
             "type": "library",
             "autoload": {
@@ -207,7 +256,7 @@
             "keywords": [
                 "register"
             ],
-            "time": "2018-01-25 16:56:22"
+            "time": "2018-05-04 16:47:25"
         },
         {
             "name": "bluetree-service/simple-log",
@@ -1838,6 +1887,7 @@
                 "github",
                 "test"
             ],
+            "abandoned": "php-coveralls/php-coveralls",
             "time": "2017-10-14 23:15:34"
         },
         {
@@ -2725,7 +2775,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "bluetree-service/filesystem": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
