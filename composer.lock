@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "010d558e185589ddc96194ca592d373d",
-    "content-hash": "f6407fe32efa9e811e0f121c2d2e9fe2",
+    "hash": "55a1ebbb06b2050a6a3e8d3e40e269ec",
+    "content-hash": "7506d244d49ae6a699faf4ee2f63a72a",
     "packages": [
         {
             "name": "bluetree-service/container",
@@ -310,6 +310,47 @@
                 "warning"
             ],
             "time": "2018-01-21 17:14:04"
+        },
+        {
+            "name": "bluetree-service/symfony-console-style",
+            "version": "0.1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bluetree-service/symfony-console-style.git",
+                "reference": "bf2e2dd0c5ec3176921a72855b238c5af908a610"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bluetree-service/symfony-console-style/zipball/bf2e2dd0c5ec3176921a72855b238c5af908a610",
+                "reference": "bf2e2dd0c5ec3176921a72855b238c5af908a610",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.0",
+                "symfony/console": "3.4.*|4.0.*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.8.35",
+                "satooshi/php-coveralls": "1.0.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BlueConsole\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Michał Adamiak",
+                    "email": "chajr@bluetree.pl"
+                }
+            ],
+            "description": "Extends symfony console display style",
+            "time": "2018-05-24 15:49:18"
         },
         {
             "name": "container-interop/container-interop",
