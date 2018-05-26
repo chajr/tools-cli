@@ -10,6 +10,7 @@ use Symfony\Component\Console\{
 use ToolsCli\Console\Command;
 use BlueFilesystem\Fs;
 use BlueData\Calculation\Math;
+use BlueConsole\MultiSelect;
 
 class DuplicatedFiles extends Command
 {
@@ -32,10 +33,30 @@ class DuplicatedFiles extends Command
             'show multi-checkbox with duplicated files, selected will be deleted'
         );
 
-        //skip empty files
-        //show hash
+        $this->addOption(
+            'skip-empty',
+            's',
+            null,
+            'skip check if file is empty'
+        );
+
+        $this->addOption(
+            'check-by-name',
+            'c',
+            InputArgument::OPTIONAL,
+            'skip check if file is empty'
+        );
+
+//        $this->addOption(
+//            'hash',
+//            '',
+//            null,
+//            'display files hashes ??? only duplicated, all files??'
+//        );
+        
+        
+
         //format filesize
-        //check by similar names -ns -ns 50 - percent (int similar_text ( string $first , string $second [, float &$percent ] ))
         
 //
         //inverse mode (default select to delete, in inverse select to keep)
@@ -43,7 +64,6 @@ class DuplicatedFiles extends Command
         
 
         //skipdir??
-        //generate html file with buttons to delete duplicated files
     }
 
     /**
@@ -55,46 +75,105 @@ class DuplicatedFiles extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $hashes = [];
-        //build list of all files and their paths (bluefs)
-        //foreach on list and calculate hash
-        
+        $names = [];
+        $duplicatedFiles = 0;
+        $duplicatedFilesSize = 0;
+
+        if ($input->getOption('interactive')) {
+            $style = new \Symfony\Component\Console\Style\SymfonyStyle($input, $output);
+            $multiselect = (new MultiSelect($style))->toggleShowInfo(false);
+        }
+
+        //echo reading dir
         $list = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
+        $allFiles = count($fileList);
+        $output->writeln("All files to check: $allFiles");
+        $output->writeln('');
 
         //echo reading files
         foreach ($fileList as $file) {
-            $hash = hash_file('sha3-256', $file);
+            if ($input->getOption('skip-empty') && filesize($file) === 0) {
+                continue;
+            }
 
-            $hashes[$hash][] = $file;
+            if ($input->getOption('check-by-name')) {
+                $fileInfo = new \SplFileInfo($file);
+                $name = $fileInfo->getFilename();
+
+                $names[$file] = $name;
+            } else {
+                $hash = hash_file('sha3-256', $file);
+
+                $hashes[$hash][] = $file;
+            }
+        }
+
+        if ($input->getOption('check-by-name')) {
+            //echo checking names
+            foreach ($names as $path => $fileName) {
+                unset($names[$path]);
+
+                foreach ($names as $verifiedPath => $toVerified) {
+                    $val = 0;
+                    similar_text($fileName, $toVerified, $val);
+
+                    if ($val >= (int)$input->getOption('check-by-name')) {
+                        if (!($hashes[$fileName] ?? false)) {
+                            $hashes[$fileName][] = $path;
+                        }
+                        $hashes[$fileName][] = $verifiedPath;
+                    }
+                }
+            }
         }
 
         //echo checking files
         foreach ($hashes as $hash) {
             if (count($hash) > 1) {
-                $size = filesize(reset($hash));
-                $output->writeln("Duplications ($size):");
+                if ($input->getOption('interactive')) {
+                    //show multiselect
+                }
 
-                foreach ($hash as $file) {
-                    $output->writeln($file);
+                $output->writeln("Duplications:");
+
+                if ($input->getOption('interactive')) {
+                    foreach ($hash as $file) {
+                        $duplicatedFiles++;
+                        $size = filesize($file);
+                        $duplicatedFilesSize += $size;
+                    }
+
+                    $selected = $multiselect->renderMultiSelect($hash);
+
+                    if ($selected) {
+                        foreach (array_keys($selected) as $idToDelete) {
+                            //delete process
+                            $output->writeln('Removing: ' . $hash[$idToDelete]);
+                        }
+                    }
+                } else {
+                    foreach ($hash as $file) {
+                        $duplicatedFiles++;
+                        $size = filesize($file);
+                        $duplicatedFilesSize += $size;
+                        $output->writeln("$file ($size)");
+                    }
                 }
 
                 $output->writeln('');
             }
         }
+
+        $output->writeln('Duplicated files: ' . $duplicatedFiles);
+        $output->writeln('Duplicated files size: ' . $duplicatedFilesSize);
+        $output->writeln('');
         
         
         
-        //generate html file with possibility to delete file
-        
-        //fduper -r 
         
         
-        //select 1    1,2,3    1-6   a
-        
-        //count files all, show size + deleted
         //progress bar (in case of full php without fdupes)
-        //hash_file
-        //hash_equals
         //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
         //set file path & size in array, size as index, if index exists calculate hashes and add files into array
         //in seccond iteration check hashes and skip single files
@@ -102,9 +181,5 @@ class DuplicatedFiles extends Command
         
         //sha2; sha-3
         //sha3-256, sha384, sha512, sha3-384
-        
-        
-        
-        //count all files after build tree (or find -type f) and progress bar of checking files
     }
 }
