@@ -131,26 +131,29 @@ class DuplicatedFiles extends Command
         //echo checking files
         foreach ($hashes as $hash) {
             if (count($hash) > 1) {
-                if ($input->getOption('interactive')) {
-                    //show multiselect
-                }
-
                 $output->writeln("Duplications:");
 
                 if ($input->getOption('interactive')) {
-                    foreach ($hash as $file) {
-                        $duplicatedFiles++;
-                        $size = filesize($file);
-                        $duplicatedFilesSize += $size;
-                    }
-
                     $selected = $multiselect->renderMultiSelect($hash);
 
                     if ($selected) {
                         foreach (array_keys($selected) as $idToDelete) {
                             //delete process
                             $output->writeln('Removing: ' . $hash[$idToDelete]);
+                            $out = Fs::delete($hash[$idToDelete]);
+
+                            if (reset($out)) {
+                                $output->writeln('Removed success: ' . $hash[$idToDelete]);
+                            } else {
+                                $output->writeln('Removed fail: ' . $hash[$idToDelete]);
+                            }
                         }
+                    }
+
+                    foreach ($hash as $file) {
+                        $duplicatedFiles++;
+                        $size = filesize($file);
+                        $duplicatedFilesSize += $size;
                     }
                 } else {
                     foreach ($hash as $file) {
