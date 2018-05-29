@@ -67,6 +67,14 @@ class DuplicatedFiles extends Command
     }
 
     /**
+     * 1. implement styles
+     * 2. filesize format
+     * 3. refactor
+     * 4. add other improvements
+     * 5. first check by filesize
+     */
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null|void
@@ -122,6 +130,7 @@ class DuplicatedFiles extends Command
                         if (!($hashes[$fileName] ?? false)) {
                             $hashes[$fileName][] = $path;
                         }
+
                         $hashes[$fileName][] = $verifiedPath;
                     }
                 }
@@ -134,26 +143,35 @@ class DuplicatedFiles extends Command
                 $output->writeln("Duplications:");
 
                 if ($input->getOption('interactive')) {
-                    $selected = $multiselect->renderMultiSelect($hash);
-
-                    if ($selected) {
-                        foreach (array_keys($selected) as $idToDelete) {
-                            //delete process
-                            $output->writeln('Removing: ' . $hash[$idToDelete]);
-                            $out = Fs::delete($hash[$idToDelete]);
-
-                            if (reset($out)) {
-                                $output->writeln('Removed success: ' . $hash[$idToDelete]);
-                            } else {
-                                $output->writeln('Removed fail: ' . $hash[$idToDelete]);
-                            }
-                        }
-                    }
+                    $deleteCounter = 0;
+                    $deleteSizeCounter = 0;
+                    $hashWithSize = [];
 
                     foreach ($hash as $file) {
                         $duplicatedFiles++;
                         $size = filesize($file);
                         $duplicatedFilesSize += $size;
+
+                        $hashWithSize[] = "$file (<info>$size</>)";
+                    }
+
+                    //show deleted file size
+                    $selected = $multiselect->renderMultiSelect($hashWithSize);
+
+                    if ($selected) {
+                        foreach (array_keys($selected) as $idToDelete) {
+                            //delete process
+                            $deleteSizeCounter += filesize($hash[$idToDelete]);
+                            $output->writeln('Removing: ' . $hash[$idToDelete]);
+                            $out = Fs::delete($hash[$idToDelete]);
+
+                            if (reset($out)) {
+                                $output->writeln('Removed success: ' . $hash[$idToDelete]);
+                                $deleteCounter++;
+                            } else {
+                                $output->writeln('Removed fail: ' . $hash[$idToDelete]);
+                            }
+                        }
                     }
                 } else {
                     foreach ($hash as $file) {
@@ -166,6 +184,13 @@ class DuplicatedFiles extends Command
 
                 $output->writeln('');
             }
+        }
+
+        if ($input->getOption('interactive')) {
+            //summary after deletion, how many files & size
+            $output->writeln('Deleted files: ' . $deleteCounter);
+            $output->writeln('Deleted files size: ' . $deleteSizeCounter);
+            $output->writeln('');
         }
 
         $output->writeln('Duplicated files: ' . $duplicatedFiles);
