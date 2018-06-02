@@ -73,6 +73,9 @@ class Commands extends Container
      */
     protected function registerCommandTool(string $namespace) : Command
     {
-        return $this->register->factory($namespace, [$namespace, $this->alias]);
+        return $this->register->factory(
+            $namespace,
+            [$namespace, $this->alias, $this->register]
+        );
     }
 }
