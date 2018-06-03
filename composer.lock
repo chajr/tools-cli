@@ -4,24 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7506d244d49ae6a699faf4ee2f63a72a",
+    "content-hash": "c2184d5d89a4d49164d918e9c4017180",
     "packages": [
         {
             "name": "bluetree-service/container",
-            "version": "0.1.0.1",
+            "version": "0.1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/container.git",
-                "reference": "eb8226530a52e4903555792cbf9b2d23109e8111"
+                "reference": "c4f4589e64463e796ba923d1dd4fa70f436826a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/container/zipball/eb8226530a52e4903555792cbf9b2d23109e8111",
-                "reference": "eb8226530a52e4903555792cbf9b2d23109e8111",
+                "url": "https://api.github.com/repos/bluetree-service/container/zipball/c4f4589e64463e796ba923d1dd4fa70f436826a6",
+                "reference": "c4f4589e64463e796ba923d1dd4fa70f436826a6",
                 "shasum": ""
             },
             "require": {
-                "bluetree-service/data": "0.2.0.0",
+                "bluetree-service/data": "0.2.*",
                 "php": ">=5.4.0",
                 "zendframework/zend-serializer": "2.*",
                 "zendframework/zend-servicemanager": "2.*"
@@ -58,24 +58,24 @@
                 "data object",
                 "object container"
             ],
-            "time": "2018-03-19T17:54:01+00:00"
+            "time": "2018-05-23T20:51:17+00:00"
         },
         {
             "name": "bluetree-service/data",
-            "version": "v0.2.0.0",
+            "version": "v0.2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/data.git",
-                "reference": "5b64de92d46256b3e111e76272db5614a8d05521"
+                "reference": "c32898c696c0077dc28ea2fa29f7e17c32708aaf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/data/zipball/5b64de92d46256b3e111e76272db5614a8d05521",
-                "reference": "5b64de92d46256b3e111e76272db5614a8d05521",
+                "url": "https://api.github.com/repos/bluetree-service/data/zipball/c32898c696c0077dc28ea2fa29f7e17c32708aaf",
+                "reference": "c32898c696c0077dc28ea2fa29f7e17c32708aaf",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.5.0"
+                "php": ">=5.6.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "4.8.35",
@@ -107,7 +107,7 @@
                 "data",
                 "xml"
             ],
-            "time": "2017-07-16T11:40:10+00:00"
+            "time": "2018-05-05T15:43:11+00:00"
         },
         {
             "name": "bluetree-service/event",
