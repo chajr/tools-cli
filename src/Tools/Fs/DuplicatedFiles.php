@@ -6,14 +6,36 @@ use Symfony\Component\Console\{
     Input\InputInterface,
     Input\InputArgument,
     Output\OutputInterface,
+    Helper\FormatterHelper,
 };
-use ToolsCli\Console\Command;
+use ToolsCli\Console\{
+    Command,
+    Alias,
+};
 use BlueFilesystem\Fs;
-use BlueData\Calculation\Math;
+use BlueData\Data\Formats;
 use BlueConsole\MultiSelect;
+use BlueRegister\Register;
+use BlueConsole\Style;
 
 class DuplicatedFiles extends Command
 {
+    /**
+     * @var Register
+     */
+    protected $register;
+
+    /**
+     * @param string $name
+     * @param Alias $alias
+     * @param Register $register
+     */
+    public function __construct(string $name, Alias $alias, Register $register)
+    {
+        $this->register= $register;
+        parent::__construct($name, $alias);
+    }
+
     protected function configure() : void
     {
         $this->setName('fs:duplicated')
@@ -53,24 +75,12 @@ class DuplicatedFiles extends Command
 //            null,
 //            'display files hashes ??? only duplicated, all files??'
 //        );
-        
-        
-
-        //format filesize
-        
-//
-        //inverse mode (default select to delete, in inverse select to keep)
-        //delete and create symbolic link
-        
-
-        //skipdir??
     }
 
     /**
-     * 1. implement styles
      * 2. filesize format
      * 3. refactor
-     * 4. add other improvements
+     * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
      * 5. first check by filesize
      */
 
@@ -80,24 +90,26 @@ class DuplicatedFiles extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output) : void
     {
         $hashes = [];
         $names = [];
         $duplicatedFiles = 0;
         $duplicatedFilesSize = 0;
+        $formatter = $this->register->factory(FormatterHelper::class);
+        /** @var Style $blueStyle */
+        $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
 
         if ($input->getOption('interactive')) {
-            $style = new \Symfony\Component\Console\Style\SymfonyStyle($input, $output);
-            $multiselect = (new MultiSelect($style))->toggleShowInfo(false);
+            $multiselect = (new MultiSelect($blueStyle))->toggleShowInfo(false);
         }
 
         //echo reading dir
         $list = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
         $allFiles = count($fileList);
-        $output->writeln("All files to check: $allFiles");
-        $output->writeln('');
+        $blueStyle->writeln("All files to check: $allFiles");
+        $blueStyle->newLine();
 
         //echo reading files
         foreach ($fileList as $file) {
@@ -140,7 +152,7 @@ class DuplicatedFiles extends Command
         //echo checking files
         foreach ($hashes as $hash) {
             if (count($hash) > 1) {
-                $output->writeln("Duplications:");
+                $blueStyle->writeln('Duplications:');
 
                 if ($input->getOption('interactive')) {
                     $deleteCounter = 0;
@@ -162,14 +174,14 @@ class DuplicatedFiles extends Command
                         foreach (array_keys($selected) as $idToDelete) {
                             //delete process
                             $deleteSizeCounter += filesize($hash[$idToDelete]);
-                            $output->writeln('Removing: ' . $hash[$idToDelete]);
+                            $blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
                             $out = Fs::delete($hash[$idToDelete]);
 
                             if (reset($out)) {
-                                $output->writeln('Removed success: ' . $hash[$idToDelete]);
+                                $blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
                                 $deleteCounter++;
                             } else {
-                                $output->writeln('Removed fail: ' . $hash[$idToDelete]);
+                                $blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
                             }
                         }
                     }
@@ -178,30 +190,29 @@ class DuplicatedFiles extends Command
                         $duplicatedFiles++;
                         $size = filesize($file);
                         $duplicatedFilesSize += $size;
-                        $output->writeln("$file ($size)");
+                        $blueStyle->writeln("$file ($size)");
                     }
                 }
 
-                $output->writeln('');
+                $blueStyle->newLine();
             }
         }
 
         if ($input->getOption('interactive')) {
             //summary after deletion, how many files & size
-            $output->writeln('Deleted files: ' . $deleteCounter);
-            $output->writeln('Deleted files size: ' . $deleteSizeCounter);
-            $output->writeln('');
+            $blueStyle->writeln('Deleted files: ' . $deleteCounter);
+            $blueStyle->writeln('Deleted files size: ' . $deleteSizeCounter);
+            $blueStyle->newLine();
         }
 
-        $output->writeln('Duplicated files: ' . $duplicatedFiles);
-        $output->writeln('Duplicated files size: ' . $duplicatedFilesSize);
-        $output->writeln('');
+        $blueStyle->writeln('Duplicated files: ' . $duplicatedFiles);
+        $blueStyle->writeln('Duplicated files size: ' . $duplicatedFilesSize);
+        $blueStyle->newLine();
         
         
         
         
         
-        //progress bar (in case of full php without fdupes)
         //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
         //set file path & size in array, size as index, if index exists calculate hashes and add files into array
         //in seccond iteration check hashes and skip single files
