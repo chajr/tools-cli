@@ -78,7 +78,6 @@ class DuplicatedFiles extends Command
     }
 
     /**
-     * 2. filesize format
      * 3. refactor
      * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
      * 5. first check by filesize
@@ -164,7 +163,8 @@ class DuplicatedFiles extends Command
                         $size = filesize($file);
                         $duplicatedFilesSize += $size;
 
-                        $hashWithSize[] = "$file (<info>$size</>)";
+                        $formattedSize = Formats::dataSize($size);
+                        $hashWithSize[] = "$file (<info>$formattedSize</>)";
                     }
 
                     //show deleted file size
@@ -190,7 +190,9 @@ class DuplicatedFiles extends Command
                         $duplicatedFiles++;
                         $size = filesize($file);
                         $duplicatedFilesSize += $size;
-                        $blueStyle->writeln("$file ($size)");
+
+                        $formattedSize = Formats::dataSize($size);
+                        $blueStyle->writeln("$file ($formattedSize)");
                     }
                 }
 
@@ -199,14 +201,13 @@ class DuplicatedFiles extends Command
         }
 
         if ($input->getOption('interactive')) {
-            //summary after deletion, how many files & size
             $blueStyle->writeln('Deleted files: ' . $deleteCounter);
-            $blueStyle->writeln('Deleted files size: ' . $deleteSizeCounter);
+            $blueStyle->writeln('Deleted files size: ' . Formats::dataSize($deleteSizeCounter));
             $blueStyle->newLine();
         }
 
         $blueStyle->writeln('Duplicated files: ' . $duplicatedFiles);
-        $blueStyle->writeln('Duplicated files size: ' . $duplicatedFilesSize);
+        $blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($duplicatedFilesSize));
         $blueStyle->newLine();
         
         
