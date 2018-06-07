@@ -21,7 +21,6 @@ class History extends Command
         //part (commands 10-100)
         //time format
         //time period
-        //show mem and time usage
         //add try/catch for each iteration, display error at end of history
         //unique + sort
 
