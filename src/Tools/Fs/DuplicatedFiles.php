@@ -91,13 +91,15 @@ class DuplicatedFiles extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output) : void
     {
+        /** @var Style $blueStyle */
+        $formatter = $this->register->factory(FormatterHelper::class);
+        $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
         $hashes = [];
         $names = [];
         $duplicatedFiles = 0;
         $duplicatedFilesSize = 0;
-        $formatter = $this->register->factory(FormatterHelper::class);
-        /** @var Style $blueStyle */
-        $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
+        $deleteCounter = 0;
+        $deleteSizeCounter = 0;
 
         if ($input->getOption('interactive')) {
             $multiselect = (new MultiSelect($blueStyle))->toggleShowInfo(false);
@@ -106,7 +108,7 @@ class DuplicatedFiles extends Command
         //echo reading dir
         $list = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
-        $allFiles = count($fileList);
+        $allFiles = \count($fileList);
         $blueStyle->writeln("All files to check: $allFiles");
         $blueStyle->newLine();
 
@@ -150,12 +152,10 @@ class DuplicatedFiles extends Command
 
         //echo checking files
         foreach ($hashes as $hash) {
-            if (count($hash) > 1) {
+            if (\count($hash) > 1) {
                 $blueStyle->writeln('Duplications:');
 
                 if ($input->getOption('interactive')) {
-                    $deleteCounter = 0;
-                    $deleteSizeCounter = 0;
                     $hashWithSize = [];
 
                     foreach ($hash as $file) {
@@ -167,7 +167,7 @@ class DuplicatedFiles extends Command
                         $hashWithSize[] = "$file (<info>$formattedSize</>)";
                     }
 
-                    //show deleted file size
+                    //@todo show deleted file size
                     $selected = $multiselect->renderMultiSelect($hashWithSize);
 
                     if ($selected) {
