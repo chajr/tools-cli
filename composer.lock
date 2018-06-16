@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c2184d5d89a4d49164d918e9c4017180",
+    "content-hash": "d75b741de64604bd29e69ffe93b2fe0b",
     "packages": [
         {
             "name": "bluetree-service/container",
-            "version": "0.1.0.2",
+            "version": "0.1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/container.git",
-                "reference": "c4f4589e64463e796ba923d1dd4fa70f436826a6"
+                "reference": "9827b98a9b12043ae94ae5dc60fdd971eba5d741"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/container/zipball/c4f4589e64463e796ba923d1dd4fa70f436826a6",
-                "reference": "c4f4589e64463e796ba923d1dd4fa70f436826a6",
+                "url": "https://api.github.com/repos/bluetree-service/container/zipball/9827b98a9b12043ae94ae5dc60fdd971eba5d741",
+                "reference": "9827b98a9b12043ae94ae5dc60fdd971eba5d741",
                 "shasum": ""
             },
             "require": {
@@ -58,7 +58,7 @@
                 "data object",
                 "object container"
             ],
-            "time": "2018-05-23T20:51:17+00:00"
+            "time": "2018-06-05T19:31:55+00:00"
         },
         {
             "name": "bluetree-service/data",
