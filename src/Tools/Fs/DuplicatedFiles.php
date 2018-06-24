@@ -26,6 +26,16 @@ class DuplicatedFiles extends Command
     protected $register;
 
     /**
+     * @var InputInterface
+     */
+    protected $input;
+
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
+
+    /**
      * @param string $name
      * @param Alias $alias
      * @param Register $register
@@ -88,9 +98,12 @@ class DuplicatedFiles extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
+     * @throws \BlueRegister\RegisterException
      */
     protected function execute(InputInterface $input, OutputInterface $output) : void
     {
+        $this->input = $input;
+        $this->output = $output;
         /** @var Style $blueStyle */
         $formatter = $this->register->factory(FormatterHelper::class);
         $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
@@ -221,5 +234,40 @@ class DuplicatedFiles extends Command
         
         //sha2; sha-3
         //sha3-256, sha384, sha512, sha3-384
+    }
+
+    protected function buildList($fileList)
+    {
+        $hashes = [];
+        $names = [];
+
+        foreach ($fileList as $file) {
+            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
+                continue;
+            }
+
+            if ($this->input->getOption('check-by-name')) {
+                $fileInfo = new \SplFileInfo($file);
+                $name = $fileInfo->getFilename();
+
+                $names[$file] = $name;
+            } else {
+                $hash = hash_file('sha3-256', $file);
+
+                $hashes[$hash][] = $file;
+            }
+        }
+
+        return ;
+    }
+
+    protected function checkByName()
+    {
+        
+    }
+
+    protected function checkByHash()
+    {
+        
     }
 }
