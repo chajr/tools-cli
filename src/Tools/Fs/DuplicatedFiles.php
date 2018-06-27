@@ -107,8 +107,6 @@ class DuplicatedFiles extends Command
         /** @var Style $blueStyle */
         $formatter = $this->register->factory(FormatterHelper::class);
         $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
-        $hashes = [];
-        $names = [];
         $duplicatedFiles = 0;
         $duplicatedFilesSize = 0;
         $deleteCounter = 0;
@@ -126,42 +124,8 @@ class DuplicatedFiles extends Command
         $blueStyle->newLine();
 
         //echo reading files
-        foreach ($fileList as $file) {
-            if ($input->getOption('skip-empty') && filesize($file) === 0) {
-                continue;
-            }
-
-            if ($input->getOption('check-by-name')) {
-                $fileInfo = new \SplFileInfo($file);
-                $name = $fileInfo->getFilename();
-
-                $names[$file] = $name;
-            } else {
-                $hash = hash_file('sha3-256', $file);
-
-                $hashes[$hash][] = $file;
-            }
-        }
-
-        if ($input->getOption('check-by-name')) {
-            //echo checking names
-            foreach ($names as $path => $fileName) {
-                unset($names[$path]);
-
-                foreach ($names as $verifiedPath => $toVerified) {
-                    $val = 0;
-                    similar_text($fileName, $toVerified, $val);
-
-                    if ($val >= (int)$input->getOption('check-by-name')) {
-                        if (!($hashes[$fileName] ?? false)) {
-                            $hashes[$fileName][] = $path;
-                        }
-
-                        $hashes[$fileName][] = $verifiedPath;
-                    }
-                }
-            }
-        }
+        [$names, $hashes] = $this->buildList($fileList);
+        $hashes = $this->checkByName($names, $hashes);
 
         //echo checking files
         foreach ($hashes as $hash) {
@@ -236,7 +200,11 @@ class DuplicatedFiles extends Command
         //sha3-256, sha384, sha512, sha3-384
     }
 
-    protected function buildList($fileList)
+    /**
+     * @param array $fileList
+     * @return array
+     */
+    protected function buildList(array $fileList) : array
     {
         $hashes = [];
         $names = [];
@@ -258,12 +226,34 @@ class DuplicatedFiles extends Command
             }
         }
 
-        return ;
+        return [$names, $hashes];
     }
 
-    protected function checkByName()
+    /**
+     * @param array $names
+     * @param array $hashes
+     * @return mixed
+     */
+    protected function checkByName(array $names, array $hashes) : array
     {
-        
+        foreach ($names as $path => $fileName) {
+            unset($names[$path]);
+
+            foreach ($names as $verifiedPath => $toVerified) {
+                $val = 0;
+                similar_text($fileName, $toVerified, $val);
+
+                if ($val >= (int)$this->input->getOption('check-by-name')) {
+                    if (!($hashes[$fileName] ?? false)) {
+                        $hashes[$fileName][] = $path;
+                    }
+
+                    $hashes[$fileName][] = $verifiedPath;
+                }
+            }
+        }
+
+        return $hashes;
     }
 
     protected function checkByHash()
