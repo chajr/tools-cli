@@ -36,6 +36,16 @@ class DuplicatedFiles extends Command
     protected $output;
 
     /**
+     * @var Style
+     */
+    protected $blueStyle;
+
+    /**
+     * @var FormatterHelper
+     */
+    protected $formatter;
+
+    /**
      * @param string $name
      * @param Alias $alias
      * @param Register $register
@@ -104,17 +114,9 @@ class DuplicatedFiles extends Command
     {
         $this->input = $input;
         $this->output = $output;
+        $this->formatter = $this->register->factory(FormatterHelper::class);
         /** @var Style $blueStyle */
-        $formatter = $this->register->factory(FormatterHelper::class);
-        $blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
-        $duplicatedFiles = 0;
-        $duplicatedFilesSize = 0;
-        $deleteCounter = 0;
-        $deleteSizeCounter = 0;
-
-        if ($input->getOption('interactive')) {
-            $multiselect = (new MultiSelect($blueStyle))->toggleShowInfo(false);
-        }
+        $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
 
         //echo reading dir
         $list = Fs::readDirectory($input->getArgument('source'), true);
@@ -128,54 +130,7 @@ class DuplicatedFiles extends Command
         $hashes = $this->checkByName($names, $hashes);
 
         //echo checking files
-        foreach ($hashes as $hash) {
-            if (\count($hash) > 1) {
-                $blueStyle->writeln('Duplications:');
-
-                if ($input->getOption('interactive')) {
-                    $hashWithSize = [];
-
-                    foreach ($hash as $file) {
-                        $duplicatedFiles++;
-                        $size = filesize($file);
-                        $duplicatedFilesSize += $size;
-
-                        $formattedSize = Formats::dataSize($size);
-                        $hashWithSize[] = "$file (<info>$formattedSize</>)";
-                    }
-
-                    //@todo show deleted file size
-                    $selected = $multiselect->renderMultiSelect($hashWithSize);
-
-                    if ($selected) {
-                        foreach (array_keys($selected) as $idToDelete) {
-                            //delete process
-                            $deleteSizeCounter += filesize($hash[$idToDelete]);
-                            $blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
-                            $out = Fs::delete($hash[$idToDelete]);
-
-                            if (reset($out)) {
-                                $blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
-                                $deleteCounter++;
-                            } else {
-                                $blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
-                            }
-                        }
-                    }
-                } else {
-                    foreach ($hash as $file) {
-                        $duplicatedFiles++;
-                        $size = filesize($file);
-                        $duplicatedFilesSize += $size;
-
-                        $formattedSize = Formats::dataSize($size);
-                        $blueStyle->writeln("$file ($formattedSize)");
-                    }
-                }
-
-                $blueStyle->newLine();
-            }
-        }
+        [$deleteCounter, $deleteSizeCounter, $duplicatedFiles, $duplicatedFilesSize] = $this->checkByHash($hashes);
 
         if ($input->getOption('interactive')) {
             $blueStyle->writeln('Deleted files: ' . $deleteCounter);
@@ -256,8 +211,70 @@ class DuplicatedFiles extends Command
         return $hashes;
     }
 
-    protected function checkByHash()
+    /**
+     * @param array $hashes
+     * @return array
+     */
+    protected function checkByHash(array $hashes) : array
     {
-        
+        $duplicatedFiles = 0;
+        $duplicatedFilesSize = 0;
+        $deleteCounter = 0;
+        $deleteSizeCounter = 0;
+
+        if ($this->input->getOption('interactive')) {
+            $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
+        }
+
+        foreach ($hashes as $hash) {
+            if (\count($hash) > 1) {
+                $this->blueStyle->writeln('Duplications:');
+
+                if ($this->input->getOption('interactive')) {
+                    $hashWithSize = [];
+
+                    foreach ($hash as $file) {
+                        $duplicatedFiles++;
+                        $size = filesize($file);
+                        $duplicatedFilesSize += $size;
+
+                        $formattedSize = Formats::dataSize($size);
+                        $hashWithSize[] = "$file (<info>$formattedSize</>)";
+                    }
+
+                    //@todo show deleted file size
+                    $selected = $multiselect->renderMultiSelect($hashWithSize);
+
+                    if ($selected) {
+                        foreach (array_keys($selected) as $idToDelete) {
+                            //delete process
+                            $deleteSizeCounter += filesize($hash[$idToDelete]);
+                            $this->blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
+                            $out = Fs::delete($hash[$idToDelete]);
+
+                            if (reset($out)) {
+                                $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
+                                $deleteCounter++;
+                            } else {
+                                $this->blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
+                            }
+                        }
+                    }
+                } else {
+                    foreach ($hash as $file) {
+                        $duplicatedFiles++;
+                        $size = filesize($file);
+                        $duplicatedFilesSize += $size;
+
+                        $formattedSize = Formats::dataSize($size);
+                        $this->blueStyle->writeln("$file ($formattedSize)");
+                    }
+                }
+
+                $this->blueStyle->newLine();
+            }
+        }
+
+        return [$deleteCounter, $deleteSizeCounter, $duplicatedFiles, $duplicatedFilesSize];
     }
 }
