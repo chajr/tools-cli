@@ -116,7 +116,7 @@ class DuplicatedFiles extends Command
         $this->output = $output;
         $this->formatter = $this->register->factory(FormatterHelper::class);
         /** @var Style $blueStyle */
-        $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $formatter]);
+        $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
 
         //echo reading dir
         $list = Fs::readDirectory($input->getArgument('source'), true);
@@ -255,6 +255,32 @@ class DuplicatedFiles extends Command
         }
 
         return [$deleteCounter, $deleteSizeCounter, $duplicatedFiles, $duplicatedFilesSize];
+    }
+
+    protected function duplicationStrategy()
+    {
+        //interactive
+        //elese
+
+        if ($this->input->getOption('interactive')) {
+            $this->interactive(
+                $hash,
+                $deleteCounter,
+                $deleteSizeCounter,
+                $duplicatedFiles,
+                $duplicatedFilesSize,
+                $multiselect
+            );
+        } else {
+            foreach ($hash as $file) {
+                $duplicatedFiles++;
+                $size = filesize($file);
+                $duplicatedFilesSize += $size;
+
+                $formattedSize = Formats::dataSize($size);
+                $this->blueStyle->writeln("$file ($formattedSize)");
+            }
+        }
     }
 
     /**
