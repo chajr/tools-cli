@@ -2,16 +2,19 @@
 
 namespace ToolsCli\Tools\Info;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use ToolsCli\Console\Command;
+
 
 class Info extends Command
 {
+    protected $commandName = 'info:info';
+
     protected function configure() : void
     {
-        $this->setName('info:info')
-            ->setDescription('Info.')
+        $this->setName($this->commandName)
+            ->setDescription($this->getAlias() . 'Info.')
             ->setHelp('');
     }
 
@@ -23,6 +26,6 @@ class Info extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
+        echo 'ok';
     }
 }
