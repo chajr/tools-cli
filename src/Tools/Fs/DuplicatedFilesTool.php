@@ -18,7 +18,7 @@ use BlueConsole\MultiSelect;
 use BlueRegister\Register;
 use BlueConsole\Style;
 
-class DuplicatedFiles extends Command
+class DuplicatedFilesTool extends Command
 {
     /**
      * @var Register
@@ -262,25 +262,6 @@ class DuplicatedFiles extends Command
         //interactive
         //elese
 
-        if ($this->input->getOption('interactive')) {
-            $this->interactive(
-                $hash,
-                $deleteCounter,
-                $deleteSizeCounter,
-                $duplicatedFiles,
-                $duplicatedFilesSize,
-                $multiselect
-            );
-        } else {
-            foreach ($hash as $file) {
-                $duplicatedFiles++;
-                $size = filesize($file);
-                $duplicatedFilesSize += $size;
-
-                $formattedSize = Formats::dataSize($size);
-                $this->blueStyle->writeln("$file ($formattedSize)");
-            }
-        }
     }
 
     /**

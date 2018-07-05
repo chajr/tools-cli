@@ -52,7 +52,7 @@ class Commands extends Container
     protected function readAllCommandTools() : array
     {
         $list = [];
-        $fileList = glob('src/Tools/*/*.php');
+        $fileList = glob('src/Tools/*/*Tool.php');
 
         foreach ($fileList as $commandFile) {
             $namespace = str_replace(

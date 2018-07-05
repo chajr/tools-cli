@@ -9,7 +9,7 @@ use Symfony\Component\Console\{
     Output\OutputInterface,
 };
 
-class RandomFile extends Command
+class RandomFileTool extends Command
 {
     /**
      * @var array

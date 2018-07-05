@@ -1,20 +1,24 @@
 <?php
+/**
+ * exa -a1
+ * ls -A1
+ * while fgets(STDIN)
+ * -r -- kasuje zawartosc katalogow
+ */
 
-namespace ToolsCli\Tools\Utils;
+namespace ToolsCli\Tools\Fs;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Worker extends Command
+class RemovalTool extends Command
 {
-    //command
-    //worker sleep (bigger than 0.1s)
 
 
     protected function configure() : void
     {
-        $this->setName('utils:worker')
+        $this->setName('fs:removal')
             ->setDescription('Info.')
             ->setHelp('');
     }

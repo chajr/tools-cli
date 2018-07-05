@@ -10,7 +10,7 @@ use Symfony\Component\Console\{
 use ToolsCli\Console\Display\Style;
 use ToolsCli\Console\Command;
 
-class NameToDate extends Command
+class NameToDateTool extends Command
 {
     protected $commandName = 'fs:name-to-date';
 

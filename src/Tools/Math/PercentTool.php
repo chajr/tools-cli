@@ -1,24 +1,16 @@
 <?php
-/**
- * exa -a1
- * ls -A1
- * while fgets(STDIN)
- * -r -- kasuje zawartosc katalogow
- */
 
-namespace ToolsCli\Tools\Fs;
+namespace ToolsCli\Tools\Math;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Removal extends Command
+class PercentTool extends Command
 {
-
-
     protected function configure() : void
     {
-        $this->setName('fs:removal')
+        $this->setName('math:percent')
             ->setDescription('Info.')
             ->setHelp('');
     }

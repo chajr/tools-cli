@@ -9,7 +9,7 @@ use Symfony\Component\Console\{
 use ToolsCli\Console\Display\Style;
 use ToolsCli\Console\Command;
 
-class History extends Command
+class HistoryTool extends Command
 {
     protected function configure() : void
     {

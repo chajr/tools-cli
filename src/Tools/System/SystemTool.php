@@ -6,7 +6,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class System extends Command
+class SystemTool extends Command
 {
     //suspend
     //hiberante
