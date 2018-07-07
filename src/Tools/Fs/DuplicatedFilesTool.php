@@ -122,8 +122,8 @@ class DuplicatedFilesTool extends Command
         $list = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
         $allFiles = \count($fileList);
-        $blueStyle->writeln("All files to check: $allFiles");
-        $blueStyle->newLine();
+        $this->blueStyle->writeln("All files to check: $allFiles");
+        $this->blueStyle->newLine();
 
         //echo reading files
         [$names, $hashes] = $this->buildList($fileList);
@@ -133,14 +133,14 @@ class DuplicatedFilesTool extends Command
         [$deleteCounter, $deleteSizeCounter, $duplicatedFiles, $duplicatedFilesSize] = $this->checkByHash($hashes);
 
         if ($input->getOption('interactive')) {
-            $blueStyle->writeln('Deleted files: ' . $deleteCounter);
-            $blueStyle->writeln('Deleted files size: ' . Formats::dataSize($deleteSizeCounter));
-            $blueStyle->newLine();
+            $this->blueStyle->writeln('Deleted files: ' . $deleteCounter);
+            $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($deleteSizeCounter));
+            $this->blueStyle->newLine();
         }
 
-        $blueStyle->writeln('Duplicated files: ' . $duplicatedFiles);
-        $blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($duplicatedFilesSize));
-        $blueStyle->newLine();
+        $this->blueStyle->writeln('Duplicated files: ' . $duplicatedFiles);
+        $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($duplicatedFilesSize));
+        $this->blueStyle->newLine();
         
         
         
