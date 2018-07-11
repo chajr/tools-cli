@@ -223,6 +223,7 @@ class DuplicatedFilesTool extends Command
     protected function checkByHash(array $hashes) : self
     {
         if ($this->input->getOption('interactive')) {
+            //@todo use register
             $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
         }
 
@@ -253,11 +254,15 @@ class DuplicatedFilesTool extends Command
         return $this;
     }
 
-    protected function duplicationStrategy()
+    protected function duplicationCheckStrategy()
     {
+        $name = 'Interactive';
         //interactive
         //elese
-
+        if (!$this->input->getOption('interactive')) {
+            $name = 'No' . $name;
+        }
+            //register
     }
 
     /**
