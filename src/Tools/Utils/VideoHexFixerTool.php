@@ -76,8 +76,10 @@ class VideoHexFixerTool extends Command
 //        $counter = 0;
         $nlCharsCount = 0;
         $crCharsCount = 0;
-        $crBin = hex2bin(0x0d);
-        $nlBin = hex2bin(0x0a);
+        $crBin = hex2bin('0d');
+        $crBinReplace = hex2bin('0d00');
+        $nlBin = hex2bin('0a');
+        $nlBinReplace = hex2bin('0d0a');
 
         $nlPos = [];
         $crPos = [];
@@ -86,19 +88,32 @@ class VideoHexFixerTool extends Command
         $size = filesize($source);
         echo "process file\n";
         for ($i = 1; $i <= $size; $i++) {
-            $charOk = fgetc($fileErr);
+            $char = fgetc($fileErr);
 
-            if ($charOk === $crBin) {
+            if ($char === $crBin) {
                 $crCharsCount++;
                 $crPos[] = $i -1;
             }
-            if ($charOk === $nlBin) {
+            if ($char === $nlBin) {
                 $nlCharsCount++;
                 $nlPos[] = $i -1;
             }
 
-            $data .= $charOk;
+            $data .= $char;
         }
+
+        $crReplaceCount = 0;
+        for ($j = 0; $j < $crCharsCount; $j++) {
+//            if ($j & $crReplaceCount) {
+                $rPos = $crPos[$j] + $crReplaceCount;
+                echo "replacement in: $j - $rPos\n";
+                $data = substr_replace($data, $crBinReplace, $rPos, 1);
+//            }
+            $crReplaceCount++;
+        }
+
+        $fileOut = fopen($input->getArgument('destination') . '/test.mp4', 'wb');
+        fwrite($fileOut, $data);
 
         echo "out\n\n";
         var_dump($size);
