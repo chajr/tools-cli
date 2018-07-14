@@ -104,22 +104,28 @@ class VideoHexFixerTool extends Command
 
         $crReplaceCount = 0;
         for ($j = 0; $j < $crCharsCount; $j++) {
-//            if ($j & $crReplaceCount) {
-                $rPos = $crPos[$j] + $crReplaceCount;
-                echo "replacement in: $j - $rPos\n";
-                $data = substr_replace($data, $crBinReplace, $rPos, 1);
-//            }
+            $dataR = $data;
+            $crReplaceCount2 = 0;
+            for ($k = 0; $k < $crCharsCount; $k++) {
+                if ($k & $crReplaceCount) {
+                    $rPos = $crPos[$k] + $crReplaceCount2;
+                    echo "replacement in: $j:$k - $rPos\n";
+                    $dataR = substr_replace($dataR, $crBinReplace, $rPos, 1);
+                }
+                $crReplaceCount2++;
+            }
             $crReplaceCount++;
+
+            $fileOut = fopen($input->getArgument('destination') . "/test-$j.mp4", 'wb');
+            fwrite($fileOut, $dataR);
         }
 
-        $fileOut = fopen($input->getArgument('destination') . '/test.mp4', 'wb');
-        fwrite($fileOut, $data);
-
         echo "out\n\n";
-        var_dump($size);
-        var_dump($nlCharsCount);
-        var_dump($crCharsCount);
-        var_dump($i);
-        var_dump(strlen($data));
+        echo "size: $size\n";
+        echo "nl count: $nlCharsCount\n";
+        echo "cr count: $crCharsCount\n";
+        echo "i: $i\n";
+        echo "date len: " . strlen($data);
+        echo PHP_EOL;
     }
 }
