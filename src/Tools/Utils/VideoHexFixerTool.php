@@ -102,6 +102,9 @@ class VideoHexFixerTool extends Command
             $data .= $char;
         }
 
+        $crPossibilities = str_repeat('0', $crCharsCount);
+        $nlPossibilities = str_repeat('0', $nlCharsCount);
+
         $crReplaceCount = 0;
         for ($j = 0; $j < $crCharsCount; $j++) {
             $dataR = $data;
