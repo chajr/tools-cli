@@ -5,6 +5,9 @@ namespace ToolsCli\Console;
 use Symfony\Component\Console\Command\Command;
 use BlueContainer\Container;
 use BlueRegister\Register;
+use \BlueRegister\RegisterException;
+use Symfony\Component\Console\Output\ConsoleOutput as Output;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 
 class Commands extends Container
 {
@@ -69,13 +72,23 @@ class Commands extends Container
 
     /**
      * @param string $namespace
-     * @return Command
+     * @return Command|null
      */
-    protected function registerCommandTool(string $namespace) : Command
+    protected function registerCommandTool(string $namespace) : ?Command
     {
-        return $this->register->factory(
-            $namespace,
-            [$namespace, $this->alias, $this->register]
-        );
+        try {
+            return $this->register->factory(
+                $namespace,
+                [$namespace, $this->alias, $this->register]
+            );
+        } catch (RegisterException $exception) {
+            $output = new Output;
+            $output->setFormatter(new OutputFormatter);
+            //use symfony style but without input
+
+            $output->writeln($exception->getMessage());
+        }
+
+        return null;
     }
 }
