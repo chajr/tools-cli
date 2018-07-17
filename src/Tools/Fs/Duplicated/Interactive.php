@@ -4,17 +4,37 @@ namespace ToolsCli\Tools\Fs\Duplicated;
 
 use ToolsCli\Tools\Fs\DuplicatedFilesTool;
 use BlueConsole\MultiSelect;
+use BlueData\Data\Formats;
 
-class Interactive
+class Interactive implements Strategy
 {
+    /**
+     * @var Style
+     */
+    protected $blueStyle;
+
+    protected $deleteCounter = 0;
+    protected $deleteSizeCounter = 0;
+    protected $duplicatedFiles = 0;
+    protected $duplicatedFilesSize = 0;
+
+    /**
+     * @param DuplicatedFilesTool $dft
+     */
     public function __construct(DuplicatedFilesTool $dft)
     {
-            $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
-            $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
-            $this->blueStyle->newLine();
+        $this->blueStyle = $dft->getBlueStyle();
+
+        $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
+        $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
+        $this->blueStyle->newLine();
     }
 
-    protected function checkByHash(array $hashes) : self
+    /**
+     * @param array $hashes
+     * @return Interactive
+     */
+    public function checkByHash(array $hashes) : self
     {
         $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
 
@@ -22,10 +42,7 @@ class Interactive
             if (\count($hash) > 1) {
                 $this->blueStyle->writeln('Duplications:');
 
-                    $this->interactive(
-                        $hash,
-                        $multiselect
-                    );
+                $this->interactive($hash, $multiselect);
 
                 $this->blueStyle->newLine();
             }
@@ -39,10 +56,8 @@ class Interactive
      * @param MultiSelect $multiselect
      * @return $this
      */
-    protected function interactive(
-        array $hash,
-        MultiSelect $multiselect
-    ) : self {
+    protected function interactive(array $hash, MultiSelect $multiselect) : self
+    {
         $hashWithSize = [];
 
         foreach ($hash as $file) {
