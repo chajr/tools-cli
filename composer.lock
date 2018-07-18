@@ -4,8 +4,87 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d75b741de64604bd29e69ffe93b2fe0b",
+    "content-hash": "ae5dd0da27f824fc079cf8c22914a39b",
     "packages": [
+        {
+            "name": "bentools/cartesian-product",
+            "version": "1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bpolaszek/cartesian-product.git",
+                "reference": "73554bdd637768f2182e327caf177e6cee3ce70c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bpolaszek/cartesian-product/zipball/73554bdd637768f2182e327caf177e6cee3ce70c",
+                "reference": "73554bdd637768f2182e327caf177e6cee3ce70c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "@stable",
+                "satooshi/php-coveralls": "@stable",
+                "squizlabs/php_codesniffer": "@stable",
+                "symfony/var-dumper": "^3.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BenTools\\CartesianProduct\\": "src"
+                },
+                "files": [
+                    "src/function.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A simple, low-memory footprint function to generate all combinations from a multi-dimensionnal array.",
+            "time": "2017-06-23T08:57:42+00:00"
+        },
+        {
+            "name": "bentools/string-combinations",
+            "version": "1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bpolaszek/string-combinations.git",
+                "reference": "a8bc7e9ef581ddbe27d55a6868e9d73ba8dfec92"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bpolaszek/string-combinations/zipball/a8bc7e9ef581ddbe27d55a6868e9d73ba8dfec92",
+                "reference": "a8bc7e9ef581ddbe27d55a6868e9d73ba8dfec92",
+                "shasum": ""
+            },
+            "require": {
+                "bentools/cartesian-product": "^1.1",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "@stable",
+                "satooshi/php-coveralls": "@stable",
+                "squizlabs/php_codesniffer": "@stable",
+                "symfony/var-dumper": "^3.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BenTools\\StringCombinations\\": "src"
+                },
+                "files": [
+                    "src/functions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A simple, low-memory footprint function to generate all string combinations from a series of characters.",
+            "time": "2018-03-26T14:28:40+00:00"
+        },
         {
             "name": "bluetree-service/container",
             "version": "0.1.0.3",
