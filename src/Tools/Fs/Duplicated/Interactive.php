@@ -34,7 +34,7 @@ class Interactive implements Strategy
      * @param array $hashes
      * @return Interactive
      */
-    public function checkByHash(array $hashes) : self
+    public function checkByHash(array $hashes) : Strategy
     {
         $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
 
@@ -49,6 +49,19 @@ class Interactive implements Strategy
         }
 
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function returnCounters() : array
+    {
+        return [
+            $this->duplicatedFiles,
+            $this->duplicatedFilesSize,
+            $this->deleteCounter,
+            $this->deleteSizeCounter,
+        ];
     }
 
     /**
