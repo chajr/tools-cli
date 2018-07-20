@@ -5,11 +5,12 @@ namespace ToolsCli\Tools\Fs\Duplicated;
 use ToolsCli\Tools\Fs\DuplicatedFilesTool;
 use BlueConsole\MultiSelect;
 use BlueData\Data\Formats;
+use BlueFilesystem\Fs;
 
 class Interactive implements Strategy
 {
     /**
-     * @var Style
+     * @var \BlueConsole\Style
      */
     protected $blueStyle;
 
@@ -86,21 +87,30 @@ class Interactive implements Strategy
         $selected = $multiselect->renderMultiSelect($hashWithSize);
 
         if ($selected) {
-            foreach (array_keys($selected) as $idToDelete) {
-                //delete process
-                $this->deleteSizeCounter += filesize($hash[$idToDelete]);
-                $this->blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
-                $out = Fs::delete($hash[$idToDelete]);
-
-                if (reset($out)) {
-                    $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
-                    $this->deleteCounter++;
-                } else {
-                    $this->blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
-                }
-            }
+            $this->processRemoving($selected, $hash);
         }
 
         return $this;
+    }
+
+    /**
+     * @param array $selected
+     * @param array $hash
+     */
+    protected function processRemoving(array $selected, array $hash) : void
+    {
+        foreach (array_keys($selected) as $idToDelete) {
+            //delete process
+            $this->deleteSizeCounter += filesize($hash[$idToDelete]);
+            $this->blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
+            $out = Fs::delete($hash[$idToDelete]);
+
+            if (reset($out)) {
+                $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
+                $this->deleteCounter++;
+            } else {
+                $this->blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
+            }
+        }
     }
 }
