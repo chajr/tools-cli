@@ -22,7 +22,8 @@
         "bluetree-service/container": "~0.1",
         "bluetree-service/filesystem": "dev-develop",
         "bluetree-service/data": "~0.2",
-        "bluetree-service/symfony-console-style": "~0.1"
+        "bluetree-service/symfony-console-style": "~0.1",
+        "bentools/string-combinations": "^1.2"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
