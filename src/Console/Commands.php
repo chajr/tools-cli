@@ -33,7 +33,7 @@ class Commands extends Container
 
     public function __construct(Alias $alias)
     {
-        //read configuration
+        //@todo read configuration
 //        $this->log = new Log([]);
 //        $this->event = new Event([]);
         //create register (bootstrap function)
@@ -84,7 +84,7 @@ class Commands extends Container
         } catch (RegisterException $exception) {
             $output = new Output;
             $output->setFormatter(new OutputFormatter);
-            //use symfony style but without input
+            //@todo use symfony style but without input
 
             $output->writeln($exception->getMessage());
         }
