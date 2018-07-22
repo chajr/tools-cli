@@ -7,5 +7,6 @@ use ToolsCli\Tools\Fs\DuplicatedFilesTool;
 interface Strategy
 {
     public function __construct(DuplicatedFilesTool $dft);
-    public function checkByHash(array $hashes);
+    public function checkByHash(array $hashes) : self;
+    public function returnCounters() : array;
 }
