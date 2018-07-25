@@ -12,9 +12,9 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
+use ToolsCli\Tools\Fs\Duplicated\Strategy;
 use BlueFilesystem\Fs;
 use BlueData\Data\Formats;
-use BlueConsole\MultiSelect;
 use BlueRegister\Register;
 use BlueConsole\Style;
 
@@ -57,11 +57,19 @@ class DuplicatedFilesTool extends Command
      */
     public function __construct(string $name, Alias $alias, Register $register)
     {
-        $this->register= $register;
+        $this->register = $register;
         parent::__construct($name, $alias);
     }
 
-    protected function configure() : void
+    /**
+     * @return Style
+     */
+    public function getBlueStyle(): Style
+    {
+        return $this->blueStyle;
+    }
+
+    protected function configure(): void
     {
         $this->setName('fs:duplicated')
             ->setDescription('Search files duplication and make some action on it.')
@@ -103,7 +111,6 @@ class DuplicatedFilesTool extends Command
     }
 
     /**
-     * 3. refactor
      * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
      * 5. first check by filesize
      */
@@ -115,7 +122,7 @@ class DuplicatedFilesTool extends Command
      * @throws \InvalidArgumentException
      * @throws \BlueRegister\RegisterException
      */
-    protected function execute(InputInterface $input, OutputInterface $output) : void
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $this->input = $input;
         $this->output = $output;
@@ -124,7 +131,7 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
 
         //echo reading dir
-        $list = Fs::readDirectory($input->getArgument('source'), true);
+        $list     = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
         $allFiles = \count($fileList);
         $this->blueStyle->writeln("All files to check: $allFiles");
@@ -135,7 +142,8 @@ class DuplicatedFilesTool extends Command
         $hashes = $this->checkByName($names, $hashes);
 
         //echo checking files
-        $this->checkByHash($hashes);
+//        $this->checkByHash($hashes);
+        $this->duplicationCheckStrategy($hashes);
 
         if ($input->getOption('interactive')) {
             $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
@@ -146,16 +154,13 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->writeln('Duplicated files: ' . $this->duplicatedFiles);
         $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
         $this->blueStyle->newLine();
-        
-        
-        
-        
-        
+
+
         //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
         //set file path & size in array, size as index, if index exists calculate hashes and add files into array
         //in seccond iteration check hashes and skip single files
-        
-        
+
+
         //sha2; sha-3
         //sha3-256, sha384, sha512, sha3-384
     }
@@ -164,10 +169,10 @@ class DuplicatedFilesTool extends Command
      * @param array $fileList
      * @return array
      */
-    protected function buildList(array $fileList) : array
+    protected function buildList(array $fileList): array
     {
         $hashes = [];
-        $names = [];
+        $names  = [];
 
         foreach ($fileList as $file) {
             if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
@@ -176,7 +181,7 @@ class DuplicatedFilesTool extends Command
 
             if ($this->input->getOption('check-by-name')) {
                 $fileInfo = new \SplFileInfo($file);
-                $name = $fileInfo->getFilename();
+                $name     = $fileInfo->getFilename();
 
                 $names[$file] = $name;
             } else {
@@ -194,7 +199,7 @@ class DuplicatedFilesTool extends Command
      * @param array $hashes
      * @return mixed
      */
-    protected function checkByName(array $names, array $hashes) : array
+    protected function checkByName(array $names, array $hashes): array
     {
         foreach ($names as $path => $fileName) {
             unset($names[$path]);
@@ -218,92 +223,26 @@ class DuplicatedFilesTool extends Command
 
     /**
      * @param array $hashes
-     * @return $this
      */
-    protected function checkByHash(array $hashes) : self
-    {
-        if ($this->input->getOption('interactive')) {
-            //@todo use register
-            $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
-        }
-
-        foreach ($hashes as $hash) {
-            if (\count($hash) > 1) {
-                $this->blueStyle->writeln('Duplications:');
-
-                if ($this->input->getOption('interactive')) {
-                    $this->interactive(
-                        $hash,
-                        $multiselect
-                    );
-                } else {
-                    foreach ($hash as $file) {
-                        $this->duplicatedFiles++;
-                        $size = filesize($file);
-                        $this->duplicatedFilesSize += $size;
-
-                        $formattedSize = Formats::dataSize($size);
-                        $this->blueStyle->writeln("$file ($formattedSize)");
-                    }
-                }
-
-                $this->blueStyle->newLine();
-            }
-        }
-
-        return $this;
-    }
-
-    protected function duplicationCheckStrategy()
+    protected function duplicationCheckStrategy(array $hashes) : void
     {
         $name = 'Interactive';
-        //interactive
-        //elese
+
         if (!$this->input->getOption('interactive')) {
             $name = 'No' . $name;
         }
-            //register
-    }
 
-    /**
-     * @param array $hash
-     * @param MultiSelect $multiselect
-     * @return $this
-     */
-    protected function interactive(
-        array $hash,
-        MultiSelect $multiselect
-    ) : self {
-        $hashWithSize = [];
+        /** @var Strategy $strategy */
+        $strategy = $this->register->factory('ToolsCli\Tools\Fs\Duplicated\\' . $name, [$this]);
 
-        foreach ($hash as $file) {
-            $this->duplicatedFiles++;
-            $size = filesize($file);
-            $this->duplicatedFilesSize += $size;
+        [$this->duplicatedFiles, $this->duplicatedFilesSize, $this->deleteCounter, $this->deleteSizeCounter]
+            = $strategy->checkByHash($hashes)->returnCounters();
 
-            $formattedSize = Formats::dataSize($size);
-            $hashWithSize[] = "$file (<info>$formattedSize</>)";
-        }
 
-        //@todo show deleted file size
-        $selected = $multiselect->renderMultiSelect($hashWithSize);
-
-        if ($selected) {
-            foreach (array_keys($selected) as $idToDelete) {
-                //delete process
-                $this->deleteSizeCounter += filesize($hash[$idToDelete]);
-                $this->blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
-                $out = Fs::delete($hash[$idToDelete]);
-
-                if (reset($out)) {
-                    $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
-                    $this->deleteCounter++;
-                } else {
-                    $this->blueStyle->errorMessage('Removed fail: ' . $hash[$idToDelete]);
-                }
-            }
-        }
-
-        return $this;
+//        foreach ($hashes as $hash) {
+//            if (\count($hash) > 1) {
+//                  $strategy->checkByHash($hashes)
+//            }
+//        }
     }
 }
