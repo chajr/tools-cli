@@ -113,6 +113,9 @@ class DuplicatedFilesTool extends Command
     /**
      * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
      * 5. first check by filesize
+     * //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
+     * //set file path & size in array, size as index, if index exists calculate hashes and add files into array
+     * //in seccond iteration check hashes and skip single files
      */
 
     /**
@@ -142,7 +145,6 @@ class DuplicatedFilesTool extends Command
         $hashes = $this->checkByName($names, $hashes);
 
         //echo checking files
-//        $this->checkByHash($hashes);
         $this->duplicationCheckStrategy($hashes);
 
         if ($input->getOption('interactive')) {
@@ -154,15 +156,6 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->writeln('Duplicated files: ' . $this->duplicatedFiles);
         $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
         $this->blueStyle->newLine();
-
-
-        //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
-        //set file path & size in array, size as index, if index exists calculate hashes and add files into array
-        //in seccond iteration check hashes and skip single files
-
-
-        //sha2; sha-3
-        //sha3-256, sha384, sha512, sha3-384
     }
 
     /**
@@ -235,14 +228,13 @@ class DuplicatedFilesTool extends Command
         /** @var Strategy $strategy */
         $strategy = $this->register->factory('ToolsCli\Tools\Fs\Duplicated\\' . $name, [$this]);
 
+        foreach ($hashes as $hash) {
+            if (\count($hash) > 1) {
+                  $strategy->checkByHash($hash);
+            }
+        }
+
         [$this->duplicatedFiles, $this->duplicatedFilesSize, $this->deleteCounter, $this->deleteSizeCounter]
-            = $strategy->checkByHash($hashes)->returnCounters();
-
-
-//        foreach ($hashes as $hash) {
-//            if (\count($hash) > 1) {
-//                  $strategy->checkByHash($hashes)
-//            }
-//        }
+            = $strategy->returnCounters();
     }
 }
