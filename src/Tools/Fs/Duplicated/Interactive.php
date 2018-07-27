@@ -14,6 +14,11 @@ class Interactive implements Strategy
      */
     protected $blueStyle;
 
+    /**
+     * @var MultiSelect
+     */
+    protected $multiselect;
+
     protected $deleteCounter = 0;
     protected $deleteSizeCounter = 0;
     protected $duplicatedFiles = 0;
@@ -25,29 +30,25 @@ class Interactive implements Strategy
     public function __construct(DuplicatedFilesTool $dft)
     {
         $this->blueStyle = $dft->getBlueStyle();
+        $this->multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
 
         $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
         $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
         $this->blueStyle->newLine();
+
     }
 
     /**
-     * @param array $hashes
+     * @param array $hash
      * @return Interactive
      */
-    public function checkByHash(array $hashes) : Strategy
+    public function checkByHash(array $hash) : Strategy
     {
-        $multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
+        $this->blueStyle->writeln('Duplications:');
 
-        foreach ($hashes as $hash) {
-            if (\count($hash) > 1) {
-                $this->blueStyle->writeln('Duplications:');
+        $this->interactive($hash, $this->multiselect);
 
-                $this->interactive($hash, $multiselect);
-
-                $this->blueStyle->newLine();
-            }
-        }
+        $this->blueStyle->newLine();
 
         return $this;
     }
