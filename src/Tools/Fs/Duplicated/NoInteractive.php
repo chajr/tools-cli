@@ -24,27 +24,24 @@ class NoInteractive implements Strategy
     }
 
     /**
-     * @param array $hashes
+     * @param array $hash
      * @return $this
      */
-    public function checkByHash(array $hashes) : Strategy
+    public function checkByHash(array $hash) : Strategy
     {
-        foreach ($hashes as $hash) {
-            if (\count($hash) > 1) {
-                $this->blueStyle->writeln('Duplications:');
+        $this->blueStyle->writeln('Duplications:');
 
-                foreach ($hash as $file) {
-                    $this->duplicatedFiles++;
-                    $size = filesize($file);
-                    $this->duplicatedFilesSize += $size;
+        foreach ($hash as $file) {
+            $this->duplicatedFiles++;
+            $size = filesize($file);
+            $this->duplicatedFilesSize += $size;
 
-                    $formattedSize = Formats::dataSize($size);
-                    $this->blueStyle->writeln("$file ($formattedSize)");
-                }
-
-                $this->blueStyle->newLine();
-            }
+            $formattedSize = Formats::dataSize($size);
+            //@todo colorize
+            $this->blueStyle->writeln("$file ($formattedSize)");
         }
+
+        $this->blueStyle->newLine();
 
         return $this;
     }
