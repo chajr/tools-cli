@@ -142,7 +142,7 @@ class DuplicatedFilesTool extends Command
 
         //echo reading files
         [$names, $hashes] = $this->buildList($fileList);
-        $hashes = $this->checkByName($names, $hashes);
+        $hashes = $this->checkByName($names, $hashes);//@todo move to strategy implementation
 
         //echo checking files
         $this->duplicationCheckStrategy($hashes);
