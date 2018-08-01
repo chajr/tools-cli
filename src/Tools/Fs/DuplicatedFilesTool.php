@@ -99,7 +99,7 @@ class DuplicatedFilesTool extends Command
             'check-by-name',
             'c',
             InputArgument::OPTIONAL,
-            'skip check if file is empty'
+            'compare files using their file names. As arg give comparation parameter'
         );
 
 //        $this->addOption(
