@@ -99,7 +99,7 @@ class DuplicatedFilesTool extends Command
             'check-by-name',
             'c',
             InputArgument::OPTIONAL,
-            'skip check if file is empty'
+            'compare files using their file names. As arg give comparation parameter'
         );
 
 //        $this->addOption(
@@ -141,11 +141,10 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->newLine();
 
         //echo reading files
-        [$names, $hashes] = $this->buildList($fileList);
-        $hashes = $this->checkByName($names, $hashes);//@todo move to strategy implementation
+        $list = $this->buildList($fileList);
 
         //echo checking files
-        $this->duplicationCheckStrategy($hashes);
+        $this->duplicationCheckStrategy($list);
 
         if ($input->getOption('interactive')) {
             $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
@@ -215,14 +214,19 @@ class DuplicatedFilesTool extends Command
     }
 
     /**
-     * @param array $hashes
+     * @param array $list
      */
-    protected function duplicationCheckStrategy(array $hashes) : void
+    protected function duplicationCheckStrategy(array $list) : void
     {
+        [$names, $hashes] = $list;
         $name = 'Interactive';
 
         if (!$this->input->getOption('interactive')) {
             $name = 'No' . $name;
+        }
+
+        if ($this->input->getOption('check-by-name')) {
+            $hashes = $this->checkByName($names, $hashes);
         }
 
         /** @var Strategy $strategy */
