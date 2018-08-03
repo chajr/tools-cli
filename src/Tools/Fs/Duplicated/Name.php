@@ -4,7 +4,7 @@ namespace ToolsCli\Tools\Fs\Duplicated;
 
 class Name
 {
-    protected function checkByName(array $names, array $hashes) : array
+    public function checkByName(array $names, array $hashes, int $similarity) : array
     {
         foreach ($names as $path => $fileName) {
             unset($names[$path]);
@@ -13,7 +13,7 @@ class Name
                 $val = 0;
                 similar_text($fileName, $toVerified, $val);
 
-                if ($val >= (int)$this->input->getOption('check-by-name')) {
+                if ($val >= $similarity) {
                     if (!($hashes[$fileName] ?? false)) {
                         $hashes[$fileName][] = $path;
                     }
