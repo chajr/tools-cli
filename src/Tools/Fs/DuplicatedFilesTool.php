@@ -17,6 +17,7 @@ use BlueFilesystem\Fs;
 use BlueData\Data\Formats;
 use BlueRegister\Register;
 use BlueConsole\Style;
+use ToolsCli\Tools\Fs\Duplicated\Name;
 
 class DuplicatedFilesTool extends Command
 {
@@ -187,33 +188,6 @@ class DuplicatedFilesTool extends Command
     }
 
     /**
-     * @param array $names
-     * @param array $hashes
-     * @return mixed
-     */
-    protected function checkByName(array $names, array $hashes): array
-    {
-        foreach ($names as $path => $fileName) {
-            unset($names[$path]);
-
-            foreach ($names as $verifiedPath => $toVerified) {
-                $val = 0;
-                similar_text($fileName, $toVerified, $val);
-
-                if ($val >= (int)$this->input->getOption('check-by-name')) {
-                    if (!($hashes[$fileName] ?? false)) {
-                        $hashes[$fileName][] = $path;
-                    }
-
-                    $hashes[$fileName][] = $verifiedPath;
-                }
-            }
-        }
-
-        return $hashes;
-    }
-
-    /**
      * @param array $list
      */
     protected function duplicationCheckStrategy(array $list) : void
@@ -226,7 +200,9 @@ class DuplicatedFilesTool extends Command
         }
 
         if ($this->input->getOption('check-by-name')) {
-            $hashes = $this->checkByName($names, $hashes);
+            /** @var \ToolsCli\Tools\Fs\Duplicated\Name $checkByName */
+            $checkByName = $this->register->factory(Name::class);
+            $hashes = $checkByName->checkByName($names, $hashes, $this->input->getOption('check-by-name'));
         }
 
         /** @var Strategy $strategy */
