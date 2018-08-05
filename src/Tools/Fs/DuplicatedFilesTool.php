@@ -114,6 +114,8 @@ class DuplicatedFilesTool extends Command
     /**
      * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
      * 5. first check by filesize
+     * 6. multithread (calculate hashes in separate threads, compare in separate (full list and splited list)
+     * 7. interactive delete list after comparation process
      * //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
      * //set file path & size in array, size as index, if index exists calculate hashes and add files into array
      * //in seccond iteration check hashes and skip single files
@@ -134,17 +136,17 @@ class DuplicatedFilesTool extends Command
         /** @var Style $blueStyle */
         $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
 
-        //echo reading dir
-        $list     = Fs::readDirectory($input->getArgument('source'), true);
+        $this->blueStyle->writeln('Reading directory.');
+        $list = Fs::readDirectory($input->getArgument('source'), true);
         $fileList = Fs::returnPaths($list)['file'];
         $allFiles = \count($fileList);
         $this->blueStyle->writeln("All files to check: $allFiles");
         $this->blueStyle->newLine();
 
-        //echo reading files
+        $this->blueStyle->writeln('Building file hash list.');
         $list = $this->buildList($fileList);
 
-        //echo checking files
+        $this->blueStyle->writeln('Compare files.');
         $this->duplicationCheckStrategy($list);
 
         if ($input->getOption('interactive')) {
@@ -174,7 +176,7 @@ class DuplicatedFilesTool extends Command
 
             if ($this->input->getOption('check-by-name')) {
                 $fileInfo = new \SplFileInfo($file);
-                $name     = $fileInfo->getFilename();
+                $name = $fileInfo->getFilename();
 
                 $names[$file] = $name;
             } else {
