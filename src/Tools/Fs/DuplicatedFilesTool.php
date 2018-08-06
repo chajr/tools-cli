@@ -7,6 +7,7 @@ use Symfony\Component\Console\{
     Input\InputArgument,
     Output\OutputInterface,
     Helper\FormatterHelper,
+    Helper\ProgressBar,
 };
 use ToolsCli\Console\{
     Command,
@@ -45,6 +46,11 @@ class DuplicatedFilesTool extends Command
      * @var FormatterHelper
      */
     protected $formatter;
+
+    /**
+     * @var ProgressBar
+     */
+    protected $progressBar;
 
     protected $deleteCounter = 0;
     protected $deleteSizeCounter = 0;
@@ -126,15 +132,15 @@ class DuplicatedFilesTool extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
-     * @throws \BlueRegister\RegisterException
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $this->input = $input;
         $this->output = $output;
         $this->formatter = $this->register->factory(FormatterHelper::class);
-        /** @var Style $blueStyle */
         $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+        $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+        $this->progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%'); //-- %message%
 
         $this->blueStyle->writeln('Reading directory.');
         $list = Fs::readDirectory($input->getArgument('source'), true);
@@ -168,8 +174,12 @@ class DuplicatedFilesTool extends Command
     {
         $hashes = [];
         $names  = [];
+        $this->progressBar->start(\count($fileList));
 
         foreach ($fileList as $file) {
+            $this->progressBar->advance();
+            //$this->progressBar->setMessage($file);
+
             if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
                 continue;
             }
@@ -185,6 +195,8 @@ class DuplicatedFilesTool extends Command
                 $hashes[$hash][] = $file;
             }
         }
+
+        $this->progressBar->finish();
 
         return [$names, $hashes];
     }
