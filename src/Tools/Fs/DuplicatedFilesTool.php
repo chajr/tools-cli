@@ -48,6 +48,11 @@ class DuplicatedFilesTool extends Command
     protected $formatter;
 
     /**
+     * @var string
+     */
+    protected $messageFormat = ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%';
+
+    /**
      * @var ProgressBar
      */
     protected $progressBar;
@@ -109,6 +114,13 @@ class DuplicatedFilesTool extends Command
             'compare files using their file names. As arg give comparation parameter'
         );
 
+        $this->addOption(
+            'progress-info',
+            'p',
+            null,
+            'Show massage on progress bar (like filename during hashing)'
+        );
+
 //        $this->addOption(
 //            'hash',
 //            '',
@@ -140,7 +152,9 @@ class DuplicatedFilesTool extends Command
         $this->formatter = $this->register->factory(FormatterHelper::class);
         $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
         $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
-        $this->progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%'); //-- %message%
+        $this->progressBar->setFormat(
+            $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
+        );
 
         $this->blueStyle->writeln('Reading directory.');
         $list = Fs::readDirectory($input->getArgument('source'), true);
@@ -178,7 +192,10 @@ class DuplicatedFilesTool extends Command
 
         foreach ($fileList as $file) {
             $this->progressBar->advance();
-            //$this->progressBar->setMessage($file);
+
+            if ($this->input->getOption('progress-info')) {
+                $this->progressBar->setMessage($file);
+            }
 
             if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
                 continue;
