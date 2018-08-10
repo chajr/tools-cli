@@ -35,7 +35,6 @@ class Interactive implements Strategy
         $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
         $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
         $this->blueStyle->newLine();
-
     }
 
     /**
