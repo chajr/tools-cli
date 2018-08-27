@@ -15,6 +15,11 @@ class OperaBackupTool extends Command
     //cp "$HOME/Library/Application Support/com.operasoftware.Opera/Current Session" "$HOME/opera-backups/$fileName-current"
     //
     //find $HOME/opera-backups/ -type f -mtime +5d -exec rm {} \;
+    
+    public const OPERA_DIRS = [
+        '/Library/Application Support/com.operasoftware.Opera',
+        '/.config/opera/',
+    ];
 
     protected function configure() : void
     {
@@ -31,6 +36,11 @@ class OperaBackupTool extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        
+    }
 
+    protected function clearOld()
+    {
+        //find $HOME/opera-backups/ -type f -mtime +5d -exec rm {} \;
     }
 }
