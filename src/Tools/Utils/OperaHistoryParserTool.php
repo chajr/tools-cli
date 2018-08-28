@@ -38,7 +38,8 @@ class OperaHistoryParserTool extends Command
         $list = array_unique($find[0]);
 
         foreach ($list as $found) {
-            echo $found . "\n============================================\n";
+            $output->writeln($found);
+            $output->writeln('============================================');
         }
     }
 }
