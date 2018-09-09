@@ -225,7 +225,7 @@ class NameToDateTool extends Command
                 }
             ],
             [
-                '^(Resized|IMG)_[\d]{8}_[\d]{4}',
+                '^(Resized|IMG)_[\d]{8}_[\d]{4,6}',
                 function ($name) {
                     $strings = explode('_', $name);
                     $part = substr($strings[2], 0, 6);
