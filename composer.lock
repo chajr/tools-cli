@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ae5dd0da27f824fc079cf8c22914a39b",
+    "content-hash": "0fbe816cbae4c209a4ea365c0418f1d1",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -84,6 +84,53 @@
             ],
             "description": "A simple, low-memory footprint function to generate all string combinations from a series of characters.",
             "time": "2018-03-26T14:28:40+00:00"
+        },
+        {
+            "name": "bluetree-service/benchmark",
+            "version": "0.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bluetree-service/benchmark.git",
+                "reference": "c1cd742999b10026695dc8ee28a26cd661b10b9c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bluetree-service/benchmark/zipball/c1cd742999b10026695dc8ee28a26cd661b10b9c",
+                "reference": "c1cd742999b10026695dc8ee28a26cd661b10b9c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Benchmark\\": "src/",
+                    "Test\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Michał Adamiak",
+                    "email": "chajr@bluetree.pl",
+                    "homepage": "https://github.com/chajr",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Class Benchmark libraries",
+            "homepage": "https://github.com/bluetree-service/benchmark",
+            "keywords": [
+                "benchmark",
+                "class library",
+                "debugger",
+                "execution time",
+                "tracer"
+            ],
+            "time": "2018-09-14T14:36:50+00:00"
         },
         {
             "name": "bluetree-service/container",
