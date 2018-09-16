@@ -8,7 +8,10 @@ require_once $mainDir . 'vendor/autoload.php';
 use Symfony\Component\Console\Application;
 use ToolsCli\Console\Commands;
 use ToolsCli\Console\Alias;
+use Benchmark\Performance\Timer;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
+Timer::start();
 $composer = json_decode(
     file_get_contents($mainDir . 'composer.json')
 );
@@ -17,12 +20,30 @@ $alias = new Alias($argv);
 $command = new Commands($alias);
 $application = new Application;
 
+$application->setAutoExit(false);
 $application->setName($composer->description);
 $application->setVersion($composer->version);
 $application->addCommands($command->toArray());
 
 $alias->setCommand($application, $command);
 
-$application->run();
-/** @todo time and memory usage */
+$code = $application->run();
 
+$output = new ConsoleOutput();
+$output->setDecorated(true);
+Timer::stop();
+//dump($code);
+//dump(Timer::calculateStats());
+$data = Timer::calculateStats();
+
+$output->writeln('');
+$output->writeln(
+    ' Total time:   '
+    . number_format($data['total_rune_time'], 3, '.', ' ')
+    . ' ms'
+);
+$output->writeln(
+    ' Total memory: '
+    . number_format($data['total_memory'], 3, '.', ' ')
+    . ' kB'
+);
