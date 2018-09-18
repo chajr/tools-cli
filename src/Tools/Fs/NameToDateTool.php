@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html
+ * @todo only in verbose-verbose show all info, on verbose, show only warning+error, in normal show warning+error at finish
+ * @todo implement https://github.com/hollodotme/fast-cgi-client
+ * @todo show info about all errors (error flag)
+ */
+
 namespace ToolsCli\Tools\Fs;
 
 use Symfony\Component\Console\{
@@ -99,7 +106,7 @@ class NameToDateTool extends Command
             if (\in_array($hash, $contentCollision, true)) {
                 $skipped++;
                 $style->warningMessage(
-                    'content collision detected: <comment>' . $mainDir . '/' . $file->getBasename() . '</comment>'
+                    'content collision detected: <fg=red>' . $mainDir . '/' . $file->getBasename() . '</>'
                 );
                 continue;
             }
@@ -133,7 +140,7 @@ class NameToDateTool extends Command
 
                 $newPath .= '-' . ++$filenameCollision[$newPath];
 
-                $style->warningMessage('collision detected: <fg=red>' . $newPath . '</>');
+                $style->warningMessage('collision detected: <comment>' . $newPath . '</comment>');
             }
 
             $newFiles[] = $newPath;
@@ -150,12 +157,6 @@ class NameToDateTool extends Command
                 unlink($oldFile) ? $style->okMessage('delete success') : $style->errorMessage('delete fail');
             }
         }
-
-        /** @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html */
-        /** @todo only in verbose-verbose show all info, on verbose, show only warning+error, in normal show warning+error at finish */
-        /** @todo implement https://github.com/hollodotme/fast-cgi-client */
-        /** @todo show info about all errors (error flag0 */
-        /** @todo replace colors for content collision & collision */
 
         $style->newLine();
         $style->okMessage('Converted files: <info>' . $count . '</info>');
