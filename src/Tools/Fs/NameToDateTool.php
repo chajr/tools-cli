@@ -5,6 +5,7 @@
  * @todo only in verbose-verbose show all info, on verbose, show only warning+error, in normal show warning+error at finish
  * @todo implement https://github.com/hollodotme/fast-cgi-client
  * @todo show info about all errors (error flag)
+ * @todo use Symfony:fs or bluetree-fs instead copy
  */
 
 namespace ToolsCli\Tools\Fs;
@@ -20,6 +21,19 @@ use ToolsCli\Console\Command;
 class NameToDateTool extends Command
 {
     protected $commandName = 'fs:name-to-date';
+
+    protected $errors = [];
+    protected $warnings = [];
+
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
+
+    /**
+     * @var Style
+     */
+    protected $style;
 
     protected function configure() : void
     {
@@ -77,7 +91,8 @@ class NameToDateTool extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output) : void
     {
-        $style = new Style($input, $output, $this);
+        $this->output = $output;
+        $this->style = new Style($input, $output, $this);
 
         $mainDir = rtrim($input->getArgument('source'), '/');
         $destination = rtrim($input->getArgument('destination'), '/');
@@ -91,8 +106,8 @@ class NameToDateTool extends Command
         $notExists = 0;
         $count = 0;
 
-        $style->infoMessage('Name to date conversion started. All elements: <fg=red>' . $all . '</>');
-        $style->newLine();
+        $this->style->infoMessage('Name to date conversion started. All elements: <fg=red>' . $all . '</>');
+        $this->style->newLine();
 
         foreach ($list as $item) {
             $file = new \SplFileInfo($item);
@@ -105,9 +120,14 @@ class NameToDateTool extends Command
 
             if (\in_array($hash, $contentCollision, true)) {
                 $skipped++;
-                $style->warningMessage(
-                    'content collision detected: <fg=red>' . $mainDir . '/' . $file->getBasename() . '</>'
-                );
+
+                if ($output->isVerbose()) {
+                    $this->showMessage(
+                        'content collision detected: <fg=red>' . $mainDir . '/' . $file->getBasename() . '</>',
+                        'warning'
+                    );
+                }
+
                 continue;
             }
 
@@ -119,14 +139,17 @@ class NameToDateTool extends Command
                 $fileCreationDate = $file->getMTime();
             }
 
-            $style->infoMessage(
+            ++$count;
+
+            $this->showMessage(
                 $file->getBasename()
                 . ' -> '
                 . date($input->getOption('date-format'), $fileCreationDate)
                 . ' - <fg=red>'
-                . ++$count
+                . $count
                 . '</> / '
-                . ($all - $skipped)
+                . ($all - $skipped),
+                'success'
             );
 
             $newName = date($input->getOption('date-format'), $fileCreationDate);
@@ -140,40 +163,69 @@ class NameToDateTool extends Command
 
                 $newPath .= '-' . ++$filenameCollision[$newPath];
 
-                $style->warningMessage('collision detected: <comment>' . $newPath . '</comment>');
+                $this->showMessage('collision detected: <comment>' . $newPath . '</comment>', 'warning');
             }
 
             $newFiles[] = $newPath;
             $newFilesFull[] = $newPath . $extension;
             $oldFile = $mainDir . '/' . $file->getBasename();
 
-            /** @todo use Symfony:fs or bluetree-fs  */
             copy(
                 $oldFile,
                 $newPath . $extension
-            ) ? $style->okMessage('copy success') : $style->errorMessage('copy fail');
+            ) ? $this->showMessage('copy success', 'sucess') : $this->showMessage('copy fail', 'error');
 
             if ($input->getOption('delete')) {
-                unlink($oldFile) ? $style->okMessage('delete success') : $style->errorMessage('delete fail');
+                unlink($oldFile) 
+                    ? $this->showMessage('delete success', 'success')
+                    : $this->showMessage('delete fail', 'error');
             }
         }
 
-        $style->newLine();
-        $style->okMessage('Converted files: <info>' . $count . '</info>');
-        $style->newLine();
+        $this->style->newLine();
+        $this->style->okMessage('Converted files: <info>' . $count . '</info>');
+        $this->style->newLine();
 
         if ($input->getOption('exists')) {
             foreach ($newFilesFull as $file) {
                 if (!file_exists($file)) {
-                    $style->errorMessage("File don't exists: $file");
+                    $this->showMessage("File don't exists: $file", 'error');
                     $notExists++;
                 }
             }
 
             if ($notExists > 0) {
-                $style->errorMessage("Not existing files: $notExists");
+                $this->style->errorMessage("Not existing files: $notExists");
             }
         }
+    }
+
+    /**
+     * @param string $message
+     * @param string $type
+     * @return $this
+     */
+    protected function showMessage(string $message, string $type) : self
+    {
+        switch (true) {
+            case $type === 'warning' && $this->output->isVerbose():
+                $this->style->warningMessage($message);
+                break;
+
+            case $type === 'error' && $this->output->isVerbose():
+                $this->style->errorMessage($message);
+                break;
+
+            case $type === 'success' && $this->output->isVeryVerbose():
+                $this->style->okMessage($message);
+                break;
+
+            default:
+                $this->style->writeln($message);
+                break;
+        }
+
+        return $this;
     }
 
     /**
