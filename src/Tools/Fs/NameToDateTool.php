@@ -220,6 +220,14 @@ class NameToDateTool extends Command
                 $this->style->okMessage($message);
                 break;
 
+            case !$this->output->isVerbose() && $type === 'error':
+                $this->errors[] = $this->style->errorMessage($message);
+                break;
+
+            case !$this->output->isVerbose() && $type === 'warning':
+                $this->warnings[] = $this->style->warningMessage($message);
+                break;
+
             default:
                 $this->style->writeln($message);
                 break;
