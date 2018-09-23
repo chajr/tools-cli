@@ -111,7 +111,7 @@ class DuplicatedFilesTool extends Command
             'check-by-name',
             'c',
             InputArgument::OPTIONAL,
-            'compare files using their file names. As arg give comparation parameter'
+            'compare files using their file names. As arg give comparision parameter'
         );
 
         $this->addOption(
