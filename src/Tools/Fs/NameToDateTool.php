@@ -2,10 +2,9 @@
 
 /**
  * @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html
- * @todo only in verbose-verbose show all info, on verbose, show only warning+error, in normal show warning+error at finish
  * @todo implement https://github.com/hollodotme/fast-cgi-client
- * @todo show info about all errors (error flag)
  * @todo use Symfony:fs or bluetree-fs instead copy
+ * @todo check that source & destination dir exists
  */
 
 namespace ToolsCli\Tools\Fs;
@@ -173,7 +172,7 @@ class NameToDateTool extends Command
             copy(
                 $oldFile,
                 $newPath . $extension
-            ) ? $this->showMessage('copy success', 'sucess') : $this->showMessage('copy fail', 'error');
+            ) ? $this->showMessage('copy success', 'success') : $this->showMessage('copy fail', 'error');
 
             if ($input->getOption('delete')) {
                 unlink($oldFile) 
@@ -198,6 +197,17 @@ class NameToDateTool extends Command
                 $this->style->errorMessage("Not existing files: $notExists");
             }
         }
+
+        if (!$this->output->isVerbose()) {
+            foreach ($this->warnings as $warning) {
+                $this->style->warningMessage($warning);
+            }
+            foreach ($this->errors as $error) {
+                $this->style->warningMessage($error);
+            }
+        }
+
+        $this->style->newLine();
     }
 
     /**
@@ -221,14 +231,14 @@ class NameToDateTool extends Command
                 break;
 
             case !$this->output->isVerbose() && $type === 'error':
-                $this->errors[] = $this->style->errorMessage($message);
+                $this->errors[] = $message;
                 break;
 
             case !$this->output->isVerbose() && $type === 'warning':
-                $this->warnings[] = $this->style->warningMessage($message);
+                $this->warnings[] = $message;
                 break;
 
-            default:
+            case $type !== 'warning' && $type !== 'error' && $type !== 'success':
                 $this->style->writeln($message);
                 break;
         }
