@@ -166,6 +166,7 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->writeln('Building file hash list.');
         $list = $this->buildList($fileList);
 
+        $this->blueStyle->newLine();
         $this->blueStyle->writeln('Compare files.');
         $this->duplicationCheckStrategy($list);
 
