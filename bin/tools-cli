@@ -38,12 +38,12 @@ $data = Timer::calculateStats();
 $output->writeln('');
 $output->writeln(
     ' Total time:   <info>'
-    . number_format($data['total_rune_time'], 3, '.', ' ')
+    . $data['total_rune_time']
     . ' ms</info>'
 );
 $output->writeln(
     ' Total memory: <info>'
-    . number_format($data['total_memory'], 3, '.', ' ')
+    . number_format($data['total_memory'], 3)
     . ' kB</info>'
 );
 $output->write(' Code: ');
