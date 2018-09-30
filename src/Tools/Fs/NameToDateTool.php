@@ -5,6 +5,7 @@
  * @todo implement https://github.com/hollodotme/fast-cgi-client
  * @todo use Symfony:fs or bluetree-fs instead copy
  * @todo check that source & destination dir exists
+ * @todo move detected content collision into separate dir
  */
 
 namespace ToolsCli\Tools\Fs;
@@ -13,9 +14,14 @@ use Symfony\Component\Console\{
     Input\InputInterface,
     Input\InputArgument,
     Output\OutputInterface,
+    Helper\ProgressBar,
+};
+use ToolsCli\Console\{
+    Command,
+    Alias,
 };
 use ToolsCli\Console\Display\Style;
-use ToolsCli\Console\Command;
+use BlueRegister\Register;
 
 class NameToDateTool extends Command
 {
@@ -33,6 +39,32 @@ class NameToDateTool extends Command
      * @var Style
      */
     protected $style;
+
+    /**
+     * @var string
+     */
+    protected $messageFormat = ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %message%';
+
+    /**
+     * @var ProgressBar
+     */
+    protected $progressBar;
+
+    /**
+     * @var Register
+     */
+    protected $register;
+
+    /**
+     * @param string $name
+     * @param Alias $alias
+     * @param Register $register
+     */
+    public function __construct(string $name, Alias $alias, Register $register)
+    {
+        $this->register = $register;
+        parent::__construct($name, $alias);
+    }
 
     protected function configure() : void
     {
@@ -93,6 +125,9 @@ class NameToDateTool extends Command
         $this->output = $output;
         $this->style = new Style($input, $output, $this);
 
+        $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+        $this->progressBar->setFormat($this->messageFormat);
+
         $mainDir = rtrim($input->getArgument('source'), '/');
         $destination = rtrim($input->getArgument('destination'), '/');
         $list = glob($mainDir . '/*');
@@ -108,8 +143,18 @@ class NameToDateTool extends Command
         $this->style->infoMessage('Name to date conversion started. All elements: <fg=red>' . $all . '</>');
         $this->style->newLine();
 
+        if (!$this->output->isVerbose()) {
+            $this->progressBar->start(\count($list));
+        }
+
         foreach ($list as $item) {
             $file = new \SplFileInfo($item);
+
+            if (!$this->output->isVerbose()) {
+                $this->progressBar->advance();
+                $this->progressBar->setMessage($file->getBasename());
+            }
+
 
             if (!$file->isFile()) {
                 continue;
@@ -179,6 +224,10 @@ class NameToDateTool extends Command
                     ? $this->showMessage('delete success', 'success')
                     : $this->showMessage('delete fail', 'error');
             }
+        }
+
+        if (!$this->output->isVerbose()) {
+            $this->progressBar->finish();
         }
 
         $this->style->newLine();
