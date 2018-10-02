@@ -1,7 +1,6 @@
 <?php
 
 /**
- * @todo add progress barr https://symfony.com/doc/current/components/console/helpers/progressbar.html
  * @todo implement https://github.com/hollodotme/fast-cgi-client
  * @todo use Symfony:fs or bluetree-fs instead copy
  * @todo check that source & destination dir exists
