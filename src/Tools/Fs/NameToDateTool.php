@@ -2,7 +2,6 @@
 
 /**
  * @todo implement https://github.com/hollodotme/fast-cgi-client
- * @todo use Symfony:fs or bluetree-fs instead copy
  * @todo check that source & destination dir exists
  * @todo move detected content collision into separate dir
  */
@@ -21,6 +20,7 @@ use ToolsCli\Console\{
 };
 use ToolsCli\Console\Display\Style;
 use BlueRegister\Register;
+use BlueFilesystem\Fs;
 
 class NameToDateTool extends Command
 {
@@ -213,7 +213,7 @@ class NameToDateTool extends Command
             $newFilesFull[] = $newPath . $extension;
             $oldFile = $mainDir . '/' . $file->getBasename();
 
-            copy(
+            Fs::copy(
                 $oldFile,
                 $newPath . $extension
             ) ? $this->showMessage('copy success', 'success') : $this->showMessage('copy fail', 'error');
