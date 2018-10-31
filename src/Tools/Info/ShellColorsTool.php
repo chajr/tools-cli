@@ -48,5 +48,14 @@ class ShellColorsTool extends Command
          * 38 - foreground
          * 48 - background
          */
+
+        //formatting
+        for ($i = 0; $i <= 107; $i++) {
+            printf("\e[%sm %3d \e[0m ", $i, $i);
+
+            if (($i === 15  || $i > 15 ) && ( ($i-15) % 6 === 0 )) {
+                echo "\n";
+            }
+        }
     }
 }
