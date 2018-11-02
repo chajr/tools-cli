@@ -33,19 +33,12 @@ $output = new ConsoleOutput();
 //$output->setDecorated(true);
 Timer::stop();
 
-$data = Timer::calculateStats();
+Timer::calculateStats();
+$data = Timer::getFormattedOutput('raw+');
 
 $output->writeln('');
-$output->writeln(
-    ' Total time:   <info>'
-    . $data['total_rune_time']
-    . ' ms</info>'
-);
-$output->writeln(
-    ' Total memory: <info>'
-    . number_format($data['total_memory'], 3)
-    . ' kB</info>'
-);
+$output->writeln(' Total time:   <info>' . $data['total_rune_time'] . '</info>');
+$output->writeln(' Total memory: <info>' . $data['total_memory'] . '</info>');
 $output->write(' Code: ');
 dump($code);
 $output->writeln('');
