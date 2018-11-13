@@ -16,7 +16,9 @@ use ToolsCli\Console\{
 use ToolsCli\Tools\Fs\Duplicated\Strategy;
 use BlueFilesystem\Fs;
 use BlueData\Data\Formats;
-use BlueRegister\Register;
+use BlueRegister\{
+    Register, RegisterException
+};
 use BlueConsole\Style;
 use ToolsCli\Tools\Fs\Duplicated\Name;
 
@@ -113,14 +115,21 @@ class IfExistsTool extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $this->input = $input;
         $this->output = $output;
-        $this->formatter = $this->register->factory(FormatterHelper::class);
-        $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
-        $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+
+        try {
+            $this->formatter = $this->register->factory(FormatterHelper::class);
+            $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        }
+
         $this->progressBar->setFormat($this->messageFormat);
 
         $this->blueStyle->writeln('Reading directories.');

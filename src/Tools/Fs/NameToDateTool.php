@@ -19,7 +19,9 @@ use ToolsCli\Console\{
     Alias,
 };
 use ToolsCli\Console\Display\Style;
-use BlueRegister\Register;
+use BlueRegister\{
+    Register, RegisterException
+};
 use BlueFilesystem\Fs;
 
 class NameToDateTool extends Command
@@ -118,13 +120,19 @@ class NameToDateTool extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output) : void
     {
         $this->output = $output;
         $this->style = new Style($input, $output, $this);
 
-        $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+        try {
+            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        }
+
         $this->progressBar->setFormat($this->messageFormat);
 
         $mainDir = rtrim($input->getArgument('source'), '/');

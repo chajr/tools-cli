@@ -27,7 +27,11 @@ $application->addCommands($command->toArray());
 
 $alias->setCommand($application, $command);
 
-$code = $application->run();
+try {
+    $code = $application->run();
+} catch (\Exception $exception) {
+    
+}
 
 $output = new ConsoleOutput();
 //$output->setDecorated(true);
