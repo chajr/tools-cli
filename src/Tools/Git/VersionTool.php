@@ -86,15 +86,16 @@ class VersionTool extends Command
 
         $dir = getcwd();
 
-        if (!Fs::exist($dir . '/composer.jsons')) {
+        if (!Fs::exist($dir . '/composer.json')) {
             throw new \Exception('Missing composer.json file.');
         }
 
         $composer = json_decode(
-            file_get_contents($dir . '/composer.jsons')
+            file_get_contents($dir . '/composer.json'),
+            true
         );
 
-        if ($composer['version'] ?? false) {
+        if (!($composer['version'] ?? false)) {
             throw new \Exception('Missing version in composer.json file.');
             /** @todo add option to add version in composer */
         }
