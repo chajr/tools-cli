@@ -2,13 +2,64 @@
 
 namespace ToolsCli\Tools\Git;
 
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use ToolsCli\Console\Command;
+
+use Symfony\Component\Console\{
+    Input\InputInterface,
+    Output\OutputInterface,
+    Helper\FormatterHelper,
+};
+use ToolsCli\Console\{
+    Command,
+    Alias,
+};
+use BlueFilesystem\Fs;
+use BlueRegister\{
+    Register, RegisterException
+};
+use BlueConsole\Style;
 
 class VersionTool extends Command
 {
+    /**
+     * @var Register
+     */
+    protected $register;
+
+    /**
+     * @var string
+     */
     protected $commandName = 'git:version';
+
+    /**
+     * @var InputInterface
+     */
+    protected $input;
+
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
+
+    /**
+     * @var Style
+     */
+    protected $blueStyle;
+
+    /**
+     * @var FormatterHelper
+     */
+    protected $formatter;
+
+    /**
+     * @param string $name
+     * @param Alias $alias
+     * @param Register $register
+     */
+    public function __construct(string $name, Alias $alias, Register $register)
+    {
+        $this->register = $register;
+        parent::__construct($name, $alias);
+    }
 
     protected function configure() : void
     {
@@ -22,13 +73,33 @@ class VersionTool extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        try {
+            $this->formatter = $this->register->factory(FormatterHelper::class);
+            $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        }
+
         $dir = getcwd();
+
+        if (!Fs::exist($dir . '/composer.jsons')) {
+            throw new \Exception('Missing composer.json file.');
+        }
+
         $composer = json_decode(
-            file_get_contents($dir . '/composer.json')
+            file_get_contents($dir . '/composer.jsons')
         );
+
+        if ($composer['version'] ?? false) {
+            throw new \Exception('Missing version in composer.json file.');
+            /** @todo add option to add version in composer */
+        }
+
+        dump($composer);
         /**
          * update composer
          * check changelog
