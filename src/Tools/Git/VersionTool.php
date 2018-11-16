@@ -132,20 +132,18 @@ class VersionTool extends Command
             exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"');
             exec('git push origin develop');
             exec('git checkout master');
+            exec('git merge develop');
+            exec('git push origin master');
+        } elseif ($branch === 'master') {
+            exec('git add -A');
+            exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"');
+            exec('git push origin master');
         }
-        
-        //checkout
-        
-        /**
-         * check if current branch is develop
-        git push origin develop
-        checkout to master
-        git merge develop
-        git push origin master
-        git tag $TAG
-        git push --tags
-        git checkout develop
-         */
+
+        exec('git tag ' . $currentVersion);
+        exec('git push --tags');
+        exec('git checkout develop');
+
         $this->blueStyle->note('Version changed form: ' . $previousVersion . ' to: ' . $currentVersion);
     }
 }
