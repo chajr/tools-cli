@@ -76,6 +76,29 @@ class VersionTool extends Command
     }
 
     /**
+     * @param string $shellCommand
+     * @param string $display
+     * @return $this
+     */
+    protected function exec(string $shellCommand, string $display = '') : self
+    {
+        $out = [];
+
+        exec($shellCommand, $out);
+
+        switch ($display) {
+            case 'show':
+                $this->blueStyle->formatBlock($out, 'info');
+                break;
+
+            default:
+                break;
+        }
+
+        return $this;
+    }
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null|void
@@ -128,12 +151,12 @@ class VersionTool extends Command
         $branch = exec('git rev-parse --abbrev-ref HEAD');
 
         if ($branch === 'develop') {
-            exec('git add -A');
-            exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"');
-            exec('git push origin develop');
-            exec('git checkout master');
-            exec('git merge develop');
-            exec('git push origin master');
+            $this->exec('git add -A', 'show')
+                ->exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"', 'show')
+                ->exec('git push origin develop', 'show')
+                ->exec('git checkout master', 'show')
+                ->exec('git merge develop', 'show')
+                ->exec('git push origin master', 'show');
         } elseif ($branch === 'master') {
             exec('git add -A');
             exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"');
