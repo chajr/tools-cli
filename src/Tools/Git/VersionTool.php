@@ -2,7 +2,6 @@
 
 namespace ToolsCli\Tools\Git;
 
-
 use Symfony\Component\Console\{
     Input\InputInterface,
     Output\OutputInterface,
@@ -151,22 +150,35 @@ class VersionTool extends Command
         $branch = exec('git rev-parse --abbrev-ref HEAD');
 
         if ($branch === 'develop') {
-            $this->exec('git add -A', 'show')
-                ->exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"', 'show')
+            $this->commit($previousVersion, $currentVersion, 'show')
                 ->exec('git push origin develop', 'show')
                 ->exec('git checkout master', 'show')
                 ->exec('git merge develop', 'show')
                 ->exec('git push origin master', 'show');
         } elseif ($branch === 'master') {
-            exec('git add -A');
-            exec('git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"');
-            exec('git push origin master');
+            $this->commit($previousVersion, $currentVersion, 'show')
+                ->exec('git push origin master', 'show');
         }
 
-        exec('git tag ' . $currentVersion);
-        exec('git push --tags');
-        exec('git checkout develop');
+        $this->exec('git tag ' . $currentVersion, 'show')
+            ->exec('git push --tags', 'show')
+            ->exec('git checkout develop', 'show');
 
         $this->blueStyle->note('Version changed form: ' . $previousVersion . ' to: ' . $currentVersion);
+    }
+
+    /**
+     * @param string $previousVersion
+     * @param string $currentVersion
+     * @param string $display
+     * @return VersionTool
+     */
+    protected function commit(string $previousVersion, string $currentVersion, string $display) : self
+    {
+        return $this->exec(
+            'git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"',
+            $display
+        )
+        ->exec('git push origin develop', $display);
     }
 }
