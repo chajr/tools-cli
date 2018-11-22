@@ -26,15 +26,15 @@ $application->setVersion($composer->version);
 $application->addCommands($command->toArray());
 
 $alias->setCommand($application, $command);
+$output = new ConsoleOutput();
+//$output->setDecorated(true);
 
 try {
     $code = $application->run();
 } catch (\Exception $exception) {
-    
+    $output->writeln('<error>' . $exception->getMessage() . '</error>');
 }
 
-$output = new ConsoleOutput();
-//$output->setDecorated(true);
 Timer::stop();
 
 Timer::calculateStats();
