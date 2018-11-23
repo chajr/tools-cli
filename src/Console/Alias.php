@@ -66,6 +66,6 @@ class Alias
      */
     protected function loadAliases() : array
     {
-        return parse_ini_file('etc/alias.ini');
+        return parse_ini_file(__DIR__ . '/../../etc/alias.ini');
     }
 }

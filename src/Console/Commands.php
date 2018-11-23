@@ -55,19 +55,83 @@ class Commands extends Container
     protected function readAllCommandTools() : array
     {
         $list = [];
-        $fileList = glob('src/Tools/*/*Tool.php');
+        $fileList = glob(__DIR__ . '/../../src/Tools/*/*Tool.php');
 
         foreach ($fileList as $commandFile) {
-            $namespace = str_replace(
-                ['/', 'src', '.php'],
-                ['\\', 'ToolsCli', ''],
-                $commandFile
-            );
+            $namespace = $this->resolveToolNamespace($commandFile);
 
             $list[$namespace] = $this->registerCommandTool($namespace);
         }
 
         return $list;
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    protected function resolveToolNamespace(string $path) : string
+    {
+        $gettingClass = false;
+        $gettingNamespace = false;
+        $namespace = '';
+        $class = '';
+        $contents = file_get_contents($path);
+
+        foreach (token_get_all($contents) as $token) {
+            if (\is_array($token) && $token[0] === T_NAMESPACE) {
+                $gettingNamespace = true;
+            }
+
+            if (\is_array($token) && $token[0] === T_CLASS) {
+                $gettingClass = true;
+            }
+
+            $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace);
+            $class = $this->getClassToken($token, $class, $gettingClass);
+
+            if ($class) {
+                break;
+            }
+        }
+
+        return $namespace ? $namespace . '\\' . $class : $class;
+    }
+
+    /**
+     * @param array|string $token
+     * @param string $namespace
+     * @param bool $gettingNamespace
+     * @return string
+     */
+    protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace) : string
+    {
+        if ($gettingNamespace === true) {
+            if (\is_array($token) && \in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
+                $namespace .= $token[1];
+
+            } elseif ($token === ';') {
+                $gettingNamespace = false;
+
+            }
+        }
+
+        return $namespace;
+    }
+
+    /**
+     * @param array|string $token
+     * @param string $class
+     * @param bool $gettingClass
+     * @return string
+     */
+    protected function getClassToken($token, string $class, bool $gettingClass) : string
+    {
+        if ($gettingClass === true && \is_array($token) && $token[0] === T_STRING) {
+            $class = $token[1];
+        }
+
+        return $class;
     }
 
     /**
