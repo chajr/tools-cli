@@ -83,7 +83,8 @@ class VersionTool extends Command
     {
         $out = [];
 
-        exec($shellCommand, $out);
+        $this->blueStyle->genericBlock($shellCommand, 'green', 'command');
+        exec($shellCommand . ' 2>&1', $out);
 
         switch ($display) {
             case 'show':
@@ -148,16 +149,16 @@ class VersionTool extends Command
         }
 
         $branch = exec('git rev-parse --abbrev-ref HEAD');
+        $this->exec('git add -A', 'show')
+            ->commit($previousVersion, $currentVersion, 'show');
 
         if ($branch === 'develop') {
-            $this->commit($previousVersion, $currentVersion, 'show')
-                ->exec('git push origin develop', 'show')
+            $this->exec('git push origin develop', 'show')
                 ->exec('git checkout master', 'show')
                 ->exec('git merge develop', 'show')
                 ->exec('git push origin master', 'show');
         } elseif ($branch === 'master') {
-            $this->commit($previousVersion, $currentVersion, 'show')
-                ->exec('git push origin master', 'show');
+            $this->exec('git push origin master', 'show');
         }
 
         $this->exec('git tag ' . $currentVersion, 'show')
@@ -178,7 +179,6 @@ class VersionTool extends Command
         return $this->exec(
             'git commit -m "Updated version form: ' . $previousVersion . ' to: ' . $currentVersion . '"',
             $display
-        )
-        ->exec('git push origin develop', $display);
+        );
     }
 }
