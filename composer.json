@@ -25,7 +25,8 @@
         "bluetree-service/symfony-console-style": "0.3.0.1",
         "bentools/string-combinations": "^1.2",
         "bluetree-service/benchmark": "^0.5.0",
-        "symfony/var-dumper": "~4.1"
+        "symfony/var-dumper": "~4.1",
+        "mikehaertl/php-shellcommand": "^1.4"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
