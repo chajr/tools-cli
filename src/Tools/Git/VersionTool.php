@@ -17,6 +17,7 @@ use BlueRegister\{
     Register, RegisterException
 };
 use BlueConsole\Style;
+use mikehaertl\shellcommand\Command as ShellCommand;
 
 class VersionTool extends Command
 {
@@ -51,6 +52,11 @@ class VersionTool extends Command
     protected $formatter;
 
     /**
+     * @var ShellCommand
+     */
+    protected $command;
+
+    /**
      * @param string $name
      * @param Alias $alias
      * @param Register $register
@@ -78,17 +84,20 @@ class VersionTool extends Command
      * @param string $shellCommand
      * @param string $display
      * @return $this
+     * @throws \Exception
      */
     protected function exec(string $shellCommand, string $display = '') : self
     {
-        $out = [];
-
         $this->blueStyle->genericBlock($shellCommand, 'green', 'command');
-        exec($shellCommand . ' 2>&1', $out);
+        $this->command->setCommand($shellCommand)->execute();
+
+        if ($this->command->getExitCode() !== 0) {
+            throw new \Exception($this->blueStyle->errorMessage($this->command->getError()));
+        }
 
         switch ($display) {
             case 'show':
-                $this->blueStyle->formatBlock($out, 'info');
+                $this->blueStyle->formatBlock($this->command->getOutput(), 'info');
                 break;
 
             default:
@@ -101,15 +110,17 @@ class VersionTool extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return int|null|void
+     * @return void
      * @throws \InvalidArgumentException
      * @throws \Exception
+     * @todo move to some generic shell execution class (return message as special method, etc)
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+            $this->command = $this->register->factory(ShellCommand::class);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
@@ -148,7 +159,14 @@ class VersionTool extends Command
             throw new \Exception('Unable to write ' . $dir . '/composer.json file.');
         }
 
-        $branch = exec('git rev-parse --abbrev-ref HEAD');
+        $this->command->setCommand('git rev-parse --abbrev-ref HEAD')->execute();
+
+        if ($this->command->getExitCode() !== 0) {
+            throw new \Exception($this->blueStyle->errorMessage($this->command->getError()));
+        }
+
+        $branch = $this->command->getOutput();
+
         $this->exec('git add -A', 'show')
             ->commit($previousVersion, $currentVersion, 'show');
 
@@ -173,6 +191,7 @@ class VersionTool extends Command
      * @param string $currentVersion
      * @param string $display
      * @return VersionTool
+     * @throws \Exception
      */
     protected function commit(string $previousVersion, string $currentVersion, string $display) : self
     {
