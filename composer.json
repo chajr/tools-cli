@@ -26,7 +26,8 @@
         "bentools/string-combinations": "^1.2",
         "bluetree-service/benchmark": "^0.5.0",
         "symfony/var-dumper": "~4.1",
-        "mikehaertl/php-shellcommand": "^1.4"
+        "mikehaertl/php-shellcommand": "^1.4",
+        "bluetree-service/cache": "^0.3.0"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
