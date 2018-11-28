@@ -3,11 +3,12 @@
 namespace ToolsCli\Console;
 
 use Symfony\Component\Console\Command\Command;
-use BlueContainer\Container;
-use BlueRegister\Register;
-use \BlueRegister\RegisterException;
 use Symfony\Component\Console\Output\ConsoleOutput as Output;
 use Symfony\Component\Console\Formatter\OutputFormatter;
+use BlueContainer\Container;
+use BlueRegister\Register;
+use BlueRegister\RegisterException;
+use BlueCache\SimpleCache;
 
 class Commands extends Container
 {
@@ -31,14 +32,29 @@ class Commands extends Container
      */
     protected $event;
 
+    /**
+     * @var SimpleCache
+     */
+    protected $cache;
+
+    /**
+     * @param Alias $alias
+     * @throws \Exception
+     */
     public function __construct(Alias $alias)
     {
         //@todo read configuration
-//        $this->log = new Log([]);
-//        $this->event = new Event([]);
         //create register (bootstrap function)
         $this->alias = $alias;
         $this->register = new Register([]);
+
+        try {
+            $this->cache = $this->register->factory(SimpleCache::class);
+//        $this->event = new Event([]);
+//        $this->log = new Log([]);
+        } catch (RegisterException $exception) {
+            throw new \RuntimeException('Unable to register class. ' . $exception->getMessage());
+        }
 
         parent::__construct(['data' => $this->readAllCommandTools()]);
 
@@ -69,6 +85,7 @@ class Commands extends Container
     /**
      * @param string $path
      * @return string
+     * @todo cache all resolved namespaces (cache time??)
      */
     protected function resolveToolNamespace(string $path) : string
     {
