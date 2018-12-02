@@ -41,7 +41,6 @@ class Commands extends Container
 
     /**
      * @param Alias $alias
-     * @throws \Exception
      */
     public function __construct(Alias $alias)
     {
@@ -61,7 +60,11 @@ class Commands extends Container
             throw new \RuntimeException('Unable to register class. ' . $exception->getMessage());
         }
 
-        parent::__construct(['data' => $this->readAllCommandTools()]);
+        try {
+            parent::__construct(['data' => $this->readAllCommandTools()]);
+        } catch (\Exception $exception) {
+            dump($exception->getMessage());
+        }
 
         $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
 
@@ -72,9 +75,15 @@ class Commands extends Container
     /**
      * @return array
      * @todo read tools commands from vendor (recognize by special namespace)
+     * @throws \BlueCache\CacheException
+     * @throws \Exception
      */
     protected function readAllCommandTools() : array
     {
+        if ($this->cache->has('tools')) {
+            return $this->cache->get('tools');
+        }
+
         $list = [];
         $fileList = glob(self::MAIN_DIR . 'src/Tools/*/*Tool.php');
 
@@ -83,6 +92,8 @@ class Commands extends Container
 
             $list[$namespace] = $this->registerCommandTool($namespace);
         }
+
+        $this->cache->set('tools', $list, new \DateInterval('P0Y0M1DT0H0M0S'));
 
         return $list;
     }
