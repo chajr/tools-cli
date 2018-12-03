@@ -12,7 +12,7 @@ class Alias
     protected $alias = '';
 
     /**
-     * @var string
+     * @var array
      */
     protected $aliases = [];
 
@@ -39,7 +39,7 @@ class Alias
     }
 
     /**
-     * @param string
+     * @param string $commandName
      * @return string|null
      */
     public function getAlias(string $commandName) : ?string
