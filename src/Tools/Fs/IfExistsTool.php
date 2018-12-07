@@ -73,7 +73,10 @@ class IfExistsTool extends Command
     protected function configure(): void
     {
         $this->setName('fs:if-exists')
-            ->setDescription('Compare files in both directories and check if files from second exists in first.')
+            ->setDescription(
+                'Compare files in both directories and check if files from second exists in first.'
+                . 'By default show files that don\'t exists'
+            )
             ->setHelp('');
 
         $this->addArgument(
@@ -89,7 +92,7 @@ class IfExistsTool extends Command
         );
 
         $this->addOption(
-            'restore',
+            'remove',
             'R',
             null,
             'show multi-checkbox with duplicated files, selected will be deleted'
@@ -105,8 +108,22 @@ class IfExistsTool extends Command
         $this->addOption(
             'auto-remove',
             'd',
-            InputArgument::OPTIONAL,
+            null,
             ''
+        );
+
+        $this->addOption(
+            'return-exists',
+            'e',
+            null,
+            'Show files that are existing instead of not existing files.'
+        );
+
+        $this->addOption(
+            'return-all',
+            'a',
+            null,
+            'Show existing and not existing files.'
         );
     }
 
@@ -155,9 +172,14 @@ class IfExistsTool extends Command
         $firstDirHashes = array_keys($listFirst[1]);
 
         foreach ($listSecond[1] as $hash => $file) {
-            if (in_array($hash, $firstDirHashes)) {
-//                $this->blueStyle->warningMessage('Existing: ' . $listFirst[1][$hash] . ' -> ' . $file);
-            } else {
+            $showExists = $input->getOption('return-exists');
+            $showAll = $input->getOption('return-all');
+
+            if (($showExists || $showAll) && \in_array($hash, $firstDirHashes, true)) {
+                $this->blueStyle->warningMessage('Existing: ' . $listFirst[1][$hash] . ' -> ' . $file);
+            } 
+
+            if ((!$showExists || $showAll) && !\in_array($hash, $firstDirHashes, true)) {
                 $this->blueStyle->errorMessage('Not exists: ' . $file);
             }
         }
