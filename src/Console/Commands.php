@@ -80,20 +80,26 @@ class Commands extends Container
      */
     protected function readAllCommandTools() : array
     {
+        $list = [];
+        $namespaces = [];
+
         if ($this->cache->has('tools')) {
-            return $this->cache->get('tools');
+            $namespaces = $this->cache->get('tools');
+        } else {
+            $namespaces['file_list'] = glob(self::MAIN_DIR . 'src/Tools/*/*Tool.php');
+
+            foreach ($namespaces['file_list'] as $commandFile) {
+                $namespaces['list'][$commandFile] = $this->resolveToolNamespace($commandFile);
+            }
+
+            $this->cache->set('tools', $namespaces, new \DateInterval('P0Y0M1DT0H0M0S'));
         }
 
-        $list = [];
-        $fileList = glob(self::MAIN_DIR . 'src/Tools/*/*Tool.php');
-
-        foreach ($fileList as $commandFile) {
-            $namespace = $this->resolveToolNamespace($commandFile);
+        foreach ($namespaces['file_list'] as $commandFile) {
+            $namespace = $namespaces['list'][$commandFile];
 
             $list[$namespace] = $this->registerCommandTool($namespace);
         }
-
-        $this->cache->set('tools', $list, new \DateInterval('P0Y0M1DT0H0M0S'));
 
         return $list;
     }
