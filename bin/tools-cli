@@ -16,20 +16,22 @@ $composer = json_decode(
     file_get_contents($mainDir . 'composer.json')
 );
 
-$alias = new Alias($argv);
-$command = new Commands($alias);
-$application = new Application;
-
-$application->setAutoExit(false);
-$application->setName($composer->description);
-$application->setVersion($composer->version);
-$application->addCommands($command->toArray());
-
-$alias->setCommand($application, $command);
+$code = 1;
 $output = new ConsoleOutput();
-//$output->setDecorated(true);
 
 try {
+    $alias = new Alias($argv);
+    $command = new Commands($alias);
+    $application = new Application;
+
+    $application->setAutoExit(false);
+    $application->setName($composer->description);
+    $application->setVersion($composer->version);
+    $application->addCommands($command->toArray());
+
+    $alias->setCommand($application, $command);
+    //$output->setDecorated(true);
+
     $code = $application->run();
 } catch (\Exception $exception) {
     $output->writeln('<error>' . $exception->getMessage() . '</error>');

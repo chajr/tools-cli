@@ -21,6 +21,10 @@ class Alias
      */
     public function __construct(array &$args)
     {
+        if (!($args[1] ?? false)) {
+            throw new \DomainException('Missing command. Type "tools-cli list" to get list of commands');
+        }
+
         $aliases = $this->loadAliases();
         $this->aliases = array_flip($aliases);
 
