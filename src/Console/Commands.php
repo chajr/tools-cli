@@ -3,8 +3,7 @@
 namespace ToolsCli\Console;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Output\ConsoleOutput as Output;
-use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use BlueContainer\Container;
 use BlueRegister\Register;
 use BlueRegister\RegisterException;
@@ -97,8 +96,11 @@ class Commands extends Container
 
         foreach ($namespaces['file_list'] as $commandFile) {
             $namespace = $namespaces['list'][$commandFile];
+            $object = $this->registerCommandTool($namespace);
 
-            $list[$namespace] = $this->registerCommandTool($namespace);
+            if ($object !== null) {
+                $list[$namespace] = $object;
+            }
         }
 
         return $list;
@@ -184,11 +186,7 @@ class Commands extends Container
                 [$namespace, $this->alias, $this->register]
             );
         } catch (RegisterException $exception) {
-            $output = new Output;
-            $output->setFormatter(new OutputFormatter);
-            //@todo use symfony style but without input
-
-            $output->writeln($exception->getMessage());
+            (new ConsoleOutput)->writeln('<error>' . $exception->getMessage() . '</error>');
         }
 
         return null;
