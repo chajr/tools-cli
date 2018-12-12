@@ -92,7 +92,7 @@ class VersionTool extends Command
         $this->command->setCommand($shellCommand)->execute();
 
         if ($this->command->getExitCode() !== 0) {
-            throw new \Exception($this->blueStyle->errorMessage($this->command->getError()));
+            throw new \RuntimeException($this->blueStyle->errorMessage($this->command->getError()));
         }
 
         switch ($display) {
@@ -113,22 +113,21 @@ class VersionTool extends Command
      * @return void
      * @throws \InvalidArgumentException
      * @throws \Exception
-     * @todo move to some generic shell execution class (return message as special method, etc)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
             $this->command = $this->register->factory(ShellCommand::class);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \RuntimeException('RegisterException: ' . $exception->getMessage());
         }
 
         $dir = getcwd();
 
         if (!Fs::exist($dir . '/composer.json')) {
-            throw new \Exception('Missing composer.json file.');
+            throw new \RuntimeException('Missing composer.json file.');
         }
 
         $composer = json_decode(
@@ -137,7 +136,7 @@ class VersionTool extends Command
         );
 
         if (!($composer['version'] ?? false)) {
-            throw new \Exception('Missing version in composer.json file.');
+            throw new \RuntimeException('Missing version in composer.json file.');
             /** @todo add option to add version in composer */
         }
 
@@ -145,8 +144,8 @@ class VersionTool extends Command
         $currentVersion = $input->getArgument('version');
 
         $changelog = file_get_contents($dir . '/doc/CHANGELOG.md');
-        if (!preg_match("/^## $currentVersion/", $changelog)) {
-            throw new \Exception('Missing version entry in: ' . '/doc/CHANGELOG.md');
+        if (!preg_match("/## $currentVersion/", $changelog)) {
+            throw new \RuntimeException('Missing version entry in: ' . '/doc/CHANGELOG.md');
         }
 
         $composer['version'] = $currentVersion;
@@ -156,13 +155,13 @@ class VersionTool extends Command
         );
 
         if (!$success) {
-            throw new \Exception('Unable to write ' . $dir . '/composer.json file.');
+            throw new \RuntimeException('Unable to write ' . $dir . '/composer.json file.');
         }
 
         $this->command->setCommand('git rev-parse --abbrev-ref HEAD')->execute();
 
         if ($this->command->getExitCode() !== 0) {
-            throw new \Exception($this->blueStyle->errorMessage($this->command->getError()));
+            throw new \RuntimeException($this->blueStyle->errorMessage($this->command->getError()));
         }
 
         $branch = $this->command->getOutput();
