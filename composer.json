@@ -3,7 +3,7 @@
     "type": "library",
     "license": "Apache-2.0",
     "description": "Useful console tools.",
-    "version": "v0.1.0.0",
+    "version": "v0.2.0.0",
     "keywords": [],
     "homepage": "https://github.com/chajr/tools-cli",
     "authors": [
@@ -20,7 +20,7 @@
         "symfony/console": "^4.1",
         "bluetree-service/register": "0.3.*",
         "bluetree-service/container": "~0.1",
-        "bluetree-service/filesystem": "dev-develop",
+        "bluetree-service/filesystem": "^0.1",
         "bluetree-service/data": "~0.2",
         "bluetree-service/symfony-console-style": "0.3.0.1",
         "bentools/string-combinations": "^1.2",
