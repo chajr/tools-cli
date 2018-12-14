@@ -44,7 +44,7 @@ class Commands extends Container
     public function __construct(Alias $alias)
     {
         //@todo read configuration
-        //create register (bootstrap function)
+        //@todo create bootstrap function
         $this->alias = $alias;
         $this->register = new Register([]);
 
@@ -67,7 +67,7 @@ class Commands extends Container
 
         $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
 
-        //set default command
+        //@todo set default command
 //        $this->set('default_name', 'helper');
     }
 
@@ -127,8 +127,10 @@ class Commands extends Container
                 $gettingClass = true;
             }
 
-            $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace);
-            $class = $this->getClassToken($token, $class, $gettingClass);
+            if (\is_array($token)) {
+                $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace);
+                $class = $this->getClassToken($token, $class, $gettingClass);
+            }
 
             if ($class) {
                 break;
@@ -139,15 +141,15 @@ class Commands extends Container
     }
 
     /**
-     * @param array|string $token
+     * @param array $token
      * @param string $namespace
      * @param bool $gettingNamespace
      * @return string
      */
-    protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace) : string
+    protected function getNamespaceToken(array $token, string $namespace, bool &$gettingNamespace) : string
     {
         if ($gettingNamespace === true) {
-            if (\is_array($token) && \in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
+            if (\in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
                 $namespace .= $token[1];
 
             } elseif ($token === ';') {
@@ -160,14 +162,14 @@ class Commands extends Container
     }
 
     /**
-     * @param array|string $token
+     * @param array $token
      * @param string $class
      * @param bool $gettingClass
      * @return string
      */
-    protected function getClassToken($token, string $class, bool $gettingClass) : string
+    protected function getClassToken(array $token, string $class, bool $gettingClass) : string
     {
-        if ($gettingClass === true && \is_array($token) && $token[0] === T_STRING) {
+        if ($gettingClass === true && $token[0] === T_STRING) {
             $class = $token[1];
         }
 
