@@ -119,15 +119,17 @@ class Commands extends Container
         $contents = file_get_contents($path);
 
         foreach (token_get_all($contents) as $token) {
-            if (\is_array($token) && $token[0] === T_NAMESPACE) {
+            $isArray = \is_array($token);
+ 
+            if ($isArray && $token[0] === T_NAMESPACE) {
                 $gettingNamespace = true;
             }
 
-            if (\is_array($token) && $token[0] === T_CLASS) {
+            if ($isArray && $token[0] === T_CLASS) {
                 $gettingClass = true;
             }
 
-            if (\is_array($token)) {
+            if ($isArray) {
                 $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace);
                 $class = $this->getClassToken($token, $class, $gettingClass);
             }
