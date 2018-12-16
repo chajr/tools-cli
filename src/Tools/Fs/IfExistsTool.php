@@ -177,7 +177,7 @@ class IfExistsTool extends Command
 
             if (($showExists || $showAll) && \in_array($hash, $firstDirHashes, true)) {
                 $this->blueStyle->warningMessage('Existing: ' . $listFirst[1][$hash] . ' -> ' . $file);
-            } 
+            }
 
             if ((!$showExists || $showAll) && !\in_array($hash, $firstDirHashes, true)) {
                 $this->blueStyle->errorMessage('Not exists: ' . $file);

@@ -8,8 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class DefaultCommand extends Command
 {
-    /** @todo support of command aliases */
-
     protected function configure() : void
     {
         $this->setName('tools-cli:info')

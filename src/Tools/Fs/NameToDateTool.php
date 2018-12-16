@@ -3,7 +3,6 @@
 /**
  * @todo implement https://github.com/hollodotme/fast-cgi-client
  * @todo check that source & destination dir exists
- * @todo move detected content collision into separate dir
  */
 
 namespace ToolsCli\Tools\Fs;
@@ -227,7 +226,7 @@ class NameToDateTool extends Command
             ) ? $this->showMessage('copy success', 'success') : $this->showMessage('copy fail', 'error');
 
             if ($input->getOption('delete')) {
-                unlink($oldFile) 
+                unlink($oldFile)
                     ? $this->showMessage('delete success', 'success')
                     : $this->showMessage('delete fail', 'error');
             }

@@ -132,16 +132,6 @@ class DuplicatedFilesTool extends Command
     }
 
     /**
-     * 4. progress bar, skip dir, create link after delete original file, inverse selection, show hash
-     * 5. first check by filesize
-     * 6. multithread (calculate hashes in separate threads, compare in separate (full list and splited list)
-     * 7. interactive delete list after comparation process
-     * //set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
-     * //set file path & size in array, size as index, if index exists calculate hashes and add files into array
-     * //in seccond iteration check hashes and skip single files
-     */
-
-    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null|void
