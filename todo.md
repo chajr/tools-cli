@@ -13,6 +13,9 @@
 
 ## Fs
 
+### CopyAndReplaceExists
+- [ ] copy files from one dir to another, if file with the same name exist compare, if different make name from hash, if exists replace
+
 ### NameToDate
 - [ ] implement https://github.com/hollodotme/fast-cgi-client (src/Tools/Fs/NameToDateTool.php:4)
 - [ ] check that source & destination dir exists (src/Tools/Fs/NameToDateTool.php:5)
