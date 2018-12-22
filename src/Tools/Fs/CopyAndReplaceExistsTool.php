@@ -22,7 +22,7 @@ use BlueRegister\{
 use BlueConsole\Style;
 use ToolsCli\Tools\Fs\Duplicated\Name;
 
-class CopyAndReplaceExists extends Command
+class CopyAndReplaceExistsTool extends Command
 {
     /**
      * @var Register
@@ -138,7 +138,7 @@ class CopyAndReplaceExists extends Command
         $allFiles = \count($fileList);
         $this->blueStyle->writeln("All files to copy: $allFiles");
         $this->blueStyle->newLine();
-        
+
         foreach ($fileList as $file) {
             //check that destination file exists
             //if not copy normally
@@ -146,18 +146,18 @@ class CopyAndReplaceExists extends Command
             //if hashes are the same skip file
             //if different copy with change name
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
 
 //        $this->blueStyle->writeln('Building file hash list.');
 //        $list = $this->buildList($fileList);
