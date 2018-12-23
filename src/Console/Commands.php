@@ -129,8 +129,8 @@ class Commands extends Container
                 $gettingClass = true;
             }
 
+            $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace, $isArray);
             if ($isArray) {
-                $namespace = $this->getNamespaceToken($token, $namespace, $gettingNamespace);
                 $class = $this->getClassToken($token, $class, $gettingClass);
             }
 
@@ -143,20 +143,19 @@ class Commands extends Container
     }
 
     /**
-     * @param array $token
+     * @param array|string $token
      * @param string $namespace
      * @param bool $gettingNamespace
+     * @param bool $isArray
      * @return string
      */
-    protected function getNamespaceToken(array $token, string $namespace, bool &$gettingNamespace) : string
+    protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace, bool $isArray) : string
     {
         if ($gettingNamespace === true) {
-            if (\in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
+            if ($isArray && \in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
                 $namespace .= $token[1];
-
             } elseif ($token === ';') {
                 $gettingNamespace = false;
-
             }
         }
 
