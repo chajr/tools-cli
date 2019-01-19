@@ -1,2 +1,4 @@
 vendor
 var/cache/*.cache
+etc/config.json
+etc/randomFile.json
