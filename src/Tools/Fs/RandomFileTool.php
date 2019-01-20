@@ -33,7 +33,7 @@ class RandomFileTool extends Command
             'c',
             InputArgument::OPTIONAL,
             'additional configuration for generation and storage results',
-            '~/.config/tools-cli/etc/randomFile.json'
+            $this->confDir() . '/etc/randomFile.json'
         );
 
         $this->addOption(
@@ -52,13 +52,27 @@ class RandomFileTool extends Command
     }
 
     /**
+     * @return string
+     */
+    protected function confDir(): string
+    {
+        $paths = \explode(DIRECTORY_SEPARATOR, __DIR__);
+
+        for ($counter = 0; $counter < 3; $counter++) {
+            \array_pop($paths);
+        }
+
+        return implode(DIRECTORY_SEPARATOR, $paths);
+    }
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
      * @throws \ErrorException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $allFiles = [];
         $storedFiles = [];
@@ -69,29 +83,30 @@ class RandomFileTool extends Command
             throw new \ErrorException('Missing configuration file: ' . $config);
         }
 
-        $configData = file_get_contents($config);
-        $this->config = json_decode($configData, true);
+        $configData = \file_get_contents($config);
+        $this->config = \json_decode($configData, true);
 
         if (!file_exists($this->config['config']['storage'])) {
             throw new \ErrorException('Missing storage file: ' . $this->config['config']['storage']);
         }
 
-        $group = $input->getArgument('directory') ?? key($this->config['directories']);
+        $group = $input->getArgument('group') ?? \key($this->config['directories']);
 
         foreach ($this->config['directories'][$group] as $directory) {
+            //skip if dir dont exist, show info
             $paths = self::returnPaths(self::readDirectory($directory, true));
             $allFiles += $paths['file'];
         }
 
         if (!$input->getOption('skip-storage')) {
-            $generated = file_get_contents($this->config['config']['storage']);
-            $storage = json_decode($generated, true);
+            $generated = \file_get_contents($this->config['config']['storage']);
+            $storage = \json_decode($generated, true);
 
             foreach ($storage as $files) {
                 $storedFiles[] = $files['path'];
             }
 
-            $allFiles = array_values(array_diff($allFiles, $storedFiles));
+            $allFiles = \array_values(\array_diff($allFiles, $storedFiles));
         }
 
         if ($this->hasImportantFile()) {
@@ -100,7 +115,7 @@ class RandomFileTool extends Command
 
             foreach ($allFiles as $file) {
                 $fileInfo = new \SplFileInfo($file);
-                $isImportant = preg_match("/^$prefix.*/", $fileInfo->getFilename());
+                $isImportant = \preg_match("/^$prefix.*/", $fileInfo->getFilename());
 
                 if ($isImportant) {
                     $importantList[] = $file;
@@ -113,18 +128,18 @@ class RandomFileTool extends Command
         }
 
         $numberOfFiles = \count($allFiles);
-        $rand = random_int(1, $numberOfFiles);
+        $rand = \random_int(1, $numberOfFiles);
 
         $randFile = $this->escape($allFiles[$rand -1]);
 
         if (!$input->getOption('skip-storage')) {
             $storage[] = [
-                'date' => date('d-m-Y H:i:s'),
+                'date' => \date('d-m-Y H:i:s'),
                 'path' => $randFile,
             ];
 
-            $newStorage = json_encode($storage, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-            file_put_contents($this->config['config']['storage'], $newStorage);
+            $newStorage = \json_encode($storage, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            \file_put_contents($this->config['config']['storage'], $newStorage);
         }
 
         echo '"' . $randFile . '"';
@@ -147,7 +162,7 @@ class RandomFileTool extends Command
     {
         $randCheck = $this->config['config']['importantFileCheckout'];
 
-        for ($i = 0; $i < $randCheck; $i++) {
+        for ($counter = 0; $counter < $randCheck; $counter++) {
             $rand = random_int(0, 1);
 
             if ($rand === 0) {
@@ -192,7 +207,6 @@ class RandomFileTool extends Command
             } else {
                 $list[$element->getRealPath()] = $element->getFileInfo();
             }
-
         }
 
         return $list;
@@ -203,7 +217,7 @@ class RandomFileTool extends Command
      *
      * @param array $array array to transform
      * @param boolean $reverse if TRUE revert array (required for deleting)
-     * @internal param string $path base path for elements, if emty use paths from transformed structure
+     * @internal param string $path base path for elements, if empty use paths from transformed structure
      * @return array array with path list for files and directories
      * @example returnPaths($array, '')
      * @example returnPaths($array, '', TRUE)
@@ -233,10 +247,9 @@ class RandomFileTool extends Command
                             $pathList['dir'][] = $dir;
                         }
                     }
-
                 }
-                $pathList['dir'][] = $path;
 
+                $pathList['dir'][] = $path;
             } else {
                 /** @var \DirectoryIterator $fileInfo */
                 $pathList['file'][] = $fileInfo->getRealPath();
