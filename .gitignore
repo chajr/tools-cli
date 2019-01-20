@@ -2,3 +2,4 @@ vendor
 var/cache/*.cache
 etc/config.json
 etc/randomFile.json
+var/storage.json
