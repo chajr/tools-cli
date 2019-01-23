@@ -93,7 +93,6 @@ class RandomFileTool extends Command
         $group = $input->getArgument('group') ?? \key($this->config['directories']);
 
         foreach ($this->config['directories'][$group] as $directory) {
-            //skip if dir dont exist, show info
             $paths = self::returnPaths(self::readDirectory($directory, true));
             $allFiles += $paths['file'];
         }

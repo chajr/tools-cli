@@ -1,5 +1,4 @@
 ## General
-
 - [ ] create phar package
 - [ ] tool for monitoring changes on critical system files, if something will change it will inform
 - [ ] allow to retrieve changed critical files + show diff
@@ -9,7 +8,7 @@
 - [ ] implement Log & Event functions (src/Console/Commands.php:56)
 - [ ] set default command (src/Console/Commands.php:70)
 - [ ] read tools commands from vendor (+global vendor) (recognize by special namespace) (src/Console/Commands.php:76)
-- [ ] remove to general Exceptions
+- [ ] remove to general Exceptions (use Throwable instead of Exceptions)
 
 ## Fs
 
@@ -38,6 +37,10 @@
 
 ### Removal
 - [ ] finish implementation
+
+### RandomFileTool
+- [ ] skip if dir dont exist, show info (src/Tools/Fs/RandomFileTool.php:96)
+- [ ] add try/catch
 
 ## Git
 
