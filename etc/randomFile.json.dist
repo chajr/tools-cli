@@ -1,11 +1,11 @@
 {
     "directories": {
-        "group-one": {
-            "1": "some_dir"
-        },
-        "group-two": {
+        "group-one": [
+            some_dir"
+        ],
+        "group-two": [
 
-        }
+        ]
     },
     "config": {
         "importantFilePrefix": "!",
