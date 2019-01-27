@@ -71,6 +71,7 @@ class RandomFileTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      * @throws \ErrorException
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
@@ -114,7 +115,7 @@ class RandomFileTool extends Command
 
             foreach ($allFiles as $file) {
                 $fileInfo = new \SplFileInfo($file);
-                $isImportant = \preg_match("/^$prefix.*/", $fileInfo->getFilename());
+                $isImportant = \preg_match('/^' . $prefix . '.*/', $fileInfo->getFilename());
 
                 if ($isImportant) {
                     $importantList[] = $file;
