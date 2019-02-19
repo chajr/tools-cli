@@ -9,8 +9,13 @@ use Symfony\Component\Console\{
 use ToolsCli\Console\Display\Style;
 use ToolsCli\Console\Command;
 
-class HistoryTool extends Command
+class CleanerTool extends Command
 {
+    /**
+     * @var array
+     */
+    protected $config;
+
     protected function configure() : void
     {
         $this->setName('system:cleaner')
@@ -30,8 +35,22 @@ class HistoryTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
-        
+        $this->readConfig();
+
+        foreach ($this->config as $config) {
+            dump($config);
+        }
+    }
+
+    protected function readConfig(): void
+    {
+        try {
+            $config = file_get_contents(__DIR__ . '/../../var/cleaner.json');
+            $this->config = \json_decode($config, true);
+        } catch (\Throwable $exception) {
+            throw new \RuntimeException($exception);
+        }
     }
 }
