@@ -115,10 +115,6 @@ class ZshHistoryMergTool extends Command
         \ksort($list);
         dump($list);
         dump(count($list));
-        //build array
-        //convert date to timestamp
-        //merge arrays
-        //if key exists, add +1s
         //save array as list of commands
     }
 }
