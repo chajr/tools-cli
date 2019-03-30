@@ -102,7 +102,6 @@ class ZshHistoryMergTool extends Command
                     $stamp = \trim($matches[0] ?? null);
 
                     if (!$stamp) {
-//                        dump($stamp, $previousStamp);
                         $list[$previousStamp][] = $line;
                         continue;
                     }
@@ -129,8 +128,12 @@ class ZshHistoryMergTool extends Command
 
             foreach ($stamp as $line) {
                 if (\preg_match("#\\\\$#", $line)) {
+                    if ($nextNoStamp) {
+                        $history .= " $line";
+                    } else {
+                        $history .= ": $key:0;$line";
+                    }
                     $nextNoStamp = true;
-                    $history .= ": $key:0;$line";
                     continue;
                 }
 
