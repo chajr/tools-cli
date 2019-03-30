@@ -91,6 +91,7 @@ class ZshHistoryMergTool extends Command
                 }
 
                 $handler = \fopen($file, 'rb');
+                $previousStamp = 0;
 
                 while (($line = \fgets($handler)) !== false) {
                     if ($line === "\n") {
@@ -98,17 +99,18 @@ class ZshHistoryMergTool extends Command
                     }
 
                     \preg_match('# [\d]{10,15}+#', $line, $matches);
-                    $stamp = (int)\trim($matches[0] ?? null);
+                    $stamp = \trim($matches[0] ?? null);
 
-                    if ($stamp === 0) {
-                        $list[$stamp] .= "\n" . $line;
+                    if (!$stamp) {
+//                        dump($stamp, $previousStamp);
+                        $list[$previousStamp][] = $line;
                         continue;
                     }
 
-                    $stamp = $this->stampCheck($stamp, $list);
+                    $previousStamp = $stamp;
 
                     $data = \explode(':0;', $line);
-                    $list[(string)$stamp] = $data[1] ?? 'Unresolved command';
+                    $list[$stamp][] = $data[1] ?? 'Unresolved command';
                 }
 
                 if (!\feof($handler)) {
@@ -119,25 +121,40 @@ class ZshHistoryMergTool extends Command
             }
         }
 
+        $history = '';
         \ksort($list);
-        dump($list);
-//        dump(count($list));
-        //save array as list of commands
-    }
 
-    /**
-     * @param float $stamp
-     * @param array $list
-     * @return float
-     */
-    protected function stampCheck(float $stamp, array $list): float
-    {
-        if (\array_key_exists((string)$stamp, $list)) {
-            $stamp += 0.01;
-            $stamp = $this->stampCheck($stamp, $list);
-//            dump($stamp, $list[(string)$stamp]);
+        foreach ($list as $key => $stamp) {
+            $nextNoStamp = false;
+
+            foreach ($stamp as $line) {
+                if (\preg_match("#\\\\$#", $line)) {
+                    $nextNoStamp = true;
+                    $history .= ": $key:0;$line";
+                    continue;
+                }
+
+                if ($nextNoStamp) {
+                    $history .= " $line";
+                } else {
+                    $history .= ": $key:0;$line";
+                }
+
+                $nextNoStamp = false;
+            }
         }
 
-        return $stamp;
+        if (empty($history)) {
+            $this->blueStyle->errorMessage('History is empty ');
+            return;
+        }
+
+        $this->blueStyle->infoMessage('Processed lines: ' . \count($list));
+        
+        try {
+            \file_put_contents($input->getArgument('output'), $history);
+        } catch (\Throwable $exception) {
+            $this->blueStyle->errorMessage('Error: save file fail: ' . $exception->getMessage());
+        }
     }
 }
