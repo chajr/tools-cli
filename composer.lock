@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e048ebb3cf1089df54222d1cfed3049c",
+    "content-hash": "2a8905f849efc824ad5d0c731ed778d0",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -87,16 +87,16 @@
         },
         {
             "name": "bluetree-service/benchmark",
-            "version": "0.5.0.0",
+            "version": "0.5.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/benchmark.git",
-                "reference": "1b2fb99fdb5fc6932182ac16e5cc00713d35af2e"
+                "reference": "da0353f98a2005f0da13fb9f1ad7ff3c97ddd073"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/benchmark/zipball/1b2fb99fdb5fc6932182ac16e5cc00713d35af2e",
-                "reference": "1b2fb99fdb5fc6932182ac16e5cc00713d35af2e",
+                "url": "https://api.github.com/repos/bluetree-service/benchmark/zipball/da0353f98a2005f0da13fb9f1ad7ff3c97ddd073",
+                "reference": "da0353f98a2005f0da13fb9f1ad7ff3c97ddd073",
                 "shasum": ""
             },
             "require": {
@@ -136,7 +136,7 @@
                 "execution time",
                 "tracer"
             ],
-            "time": "2018-10-30T15:17:39+00:00"
+            "time": "2018-12-17T17:34:00+00:00"
         },
         {
             "name": "bluetree-service/cache",
@@ -3392,7 +3392,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.1.0"
+        "php": ">=7.3.0"
     },
     "platform-dev": []
 }
