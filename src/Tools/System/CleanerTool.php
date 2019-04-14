@@ -8,6 +8,7 @@ use Symfony\Component\Console\{
 };
 use ToolsCli\Console\Display\Style;
 use ToolsCli\Console\Command;
+use BlueFilesystem\Fs;
 
 class CleanerTool extends Command
 {
@@ -26,6 +27,9 @@ class CleanerTool extends Command
          * clear unwanted files from system (orm move to other directory)
          * files config: regular expression to search files, and time limit for that files
          * after file time is exceeded, file or dir is removed
+         * move files to specified destination
+         * special file with custom actions
+         * accept all php datetime formats (https://www.php.net/manual/en/datetime.formats.php)
          */
     }
 
@@ -40,15 +44,25 @@ class CleanerTool extends Command
         $this->readConfig();
 
         foreach ($this->config as $config) {
-            dump($config);
+            $this->executeAction($config);
+        }
+    }
+
+    protected function executeAction(array $config): void
+    {
+        $readPath = Fs::readDirectory($config['path'], $config['params']['recursive']);
+
+        foreach ($readPath as $pathVal) {
+            dump($pathVal);
         }
     }
 
     protected function readConfig(): void
     {
         try {
-            $config = file_get_contents(__DIR__ . '/../../var/cleaner.json');
-            $this->config = \json_decode($config, true);
+            $baseConfig = file_get_contents(__DIR__ . '/../../../etc/cleaner.json');
+            $this->config = \json_decode($baseConfig, true)['list'];
+            //@todo add read from main /etc dir
         } catch (\Throwable $exception) {
             throw new \RuntimeException($exception);
         }
