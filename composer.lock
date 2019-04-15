@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2a8905f849efc824ad5d0c731ed778d0",
+    "content-hash": "cae3d44b034f15be59ac9bf25265f8bd",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -347,28 +347,30 @@
         },
         {
             "name": "bluetree-service/filesystem",
-            "version": "0.1.1.0",
+            "version": "0.2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/filesystem.git",
-                "reference": "c0ee7c0fca6a6af5621be087ce473a90618f4e1c"
+                "reference": "2351bb7b2a5b2d693cd75137f586373aaa259c4e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/filesystem/zipball/c0ee7c0fca6a6af5621be087ce473a90618f4e1c",
-                "reference": "c0ee7c0fca6a6af5621be087ce473a90618f4e1c",
+                "url": "https://api.github.com/repos/bluetree-service/filesystem/zipball/2351bb7b2a5b2d693cd75137f586373aaa259c4e",
+                "reference": "2351bb7b2a5b2d693cd75137f586373aaa259c4e",
                 "shasum": ""
             },
             "require": {
-                "bluetree-service/container": "0.1.*",
-                "bluetree-service/event": "0.7.*",
-                "bluetree-service/register": "0.3.*",
+                "bluetree-service/container": "0.1.0.3",
+                "bluetree-service/event": "^v0.7",
+                "bluetree-service/register": "^0.3",
                 "bluetree-service/simple-log": "0.7.*",
-                "php": ">=5.6.0"
+                "php": ">=7.1.0"
             },
             "require-dev": {
-                "bluetree-service/clover-reporter": "0.1.*",
-                "roave/security-advisories": "dev-master"
+                "bluetree-service/clover-reporter": "v0.1.4.2",
+                "phpunit/phpunit": "^7.5",
+                "roave/security-advisories": "dev-master",
+                "satooshi/php-coveralls": "^2.0"
             },
             "type": "library",
             "autoload": {
@@ -389,7 +391,7 @@
                 }
             ],
             "homepage": "https://github.com/bluetree-service/benchmark",
-            "time": "2018-12-20T16:49:59+00:00"
+            "time": "2019-04-14T16:40:02+00:00"
         },
         {
             "name": "bluetree-service/register",
@@ -2439,6 +2441,7 @@
                 "mock",
                 "xunit"
             ],
+            "abandoned": true,
             "time": "2018-02-15T05:27:38+00:00"
         },
         {

@@ -5,7 +5,7 @@ namespace ToolsCli\Tools\Fs\Duplicated;
 use ToolsCli\Tools\Fs\DuplicatedFilesTool;
 use BlueConsole\MultiSelect;
 use BlueData\Data\Formats;
-use BlueFilesystem\Fs;
+use BlueFilesystem\StaticObjects\Fs;
 
 class Interactive implements Strategy
 {

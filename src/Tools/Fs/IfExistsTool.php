@@ -13,14 +13,11 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
-use ToolsCli\Tools\Fs\Duplicated\Strategy;
-use BlueFilesystem\Fs;
-use BlueData\Data\Formats;
+use BlueFilesystem\StaticObjects\Structure;
 use BlueRegister\{
     Register, RegisterException
 };
 use BlueConsole\Style;
-use ToolsCli\Tools\Fs\Duplicated\Name;
 
 class IfExistsTool extends Command
 {
@@ -143,6 +140,8 @@ class IfExistsTool extends Command
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
             $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+            $structureFirst = $this->register->factory(Structure::class, [$input->getArgument('first'), true]);
+            $structureSecond = $this->register->factory(Structure::class, [$input->getArgument('second'), true]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
@@ -150,10 +149,8 @@ class IfExistsTool extends Command
         $this->progressBar->setFormat($this->messageFormat);
 
         $this->blueStyle->writeln('Reading directories.');
-        $firstList = Fs::readDirectory($input->getArgument('first'), true);
-        $secondList = Fs::readDirectory($input->getArgument('second'), true);
-        $fileListFirst = Fs::returnPaths($firstList)['file'];
-        $fileListSecond = Fs::returnPaths($secondList)['file'];
+        $fileListFirst = $structureFirst->returnPaths()['file'];
+        $fileListSecond = $structureSecond->returnPaths()['file'];
 
         $allFilesFirst = \count($fileListFirst);
         $allFilesSecond = \count($fileListSecond);

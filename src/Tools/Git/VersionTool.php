@@ -12,7 +12,7 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
-use BlueFilesystem\Fs;
+use BlueFilesystem\StaticObjects\Structure;
 use BlueRegister\{
     Register, RegisterException
 };
@@ -126,7 +126,7 @@ class VersionTool extends Command
 
         $dir = getcwd();
 
-        if (!Fs::exist($dir . '/composer.json')) {
+        if (!Structure::exist($dir . '/composer.json')) {
             throw new \RuntimeException('Missing composer.json file.');
         }
 

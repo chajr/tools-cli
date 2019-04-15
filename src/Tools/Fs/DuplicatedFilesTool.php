@@ -14,7 +14,7 @@ use ToolsCli\Console\{
     Alias,
 };
 use ToolsCli\Tools\Fs\Duplicated\Strategy;
-use BlueFilesystem\Fs;
+use BlueFilesystem\StaticObjects\Structure;
 use BlueData\Data\Formats;
 use BlueRegister\{
     Register, RegisterException
@@ -147,6 +147,7 @@ class DuplicatedFilesTool extends Command
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
             $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+            $structure = $this->register->factory(Structure::class, [$input->getArgument('source'), true]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
@@ -156,8 +157,7 @@ class DuplicatedFilesTool extends Command
         );
 
         $this->blueStyle->writeln('Reading directory.');
-        $list = Fs::readDirectory($input->getArgument('source'), true);
-        $fileList = Fs::returnPaths($list)['file'];
+        $fileList = $structure->returnPaths()['file'];
         $allFiles = \count($fileList);
         $this->blueStyle->writeln("All files to check: $allFiles");
         $this->blueStyle->newLine();

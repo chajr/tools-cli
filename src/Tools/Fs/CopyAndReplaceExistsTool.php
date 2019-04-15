@@ -13,14 +13,14 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
-use ToolsCli\Tools\Fs\Duplicated\Strategy;
-use BlueFilesystem\Fs;
-use BlueData\Data\Formats;
+use BlueFilesystem\StaticObjects\{
+    Fs,
+    Structure,
+};
 use BlueRegister\{
     Register, RegisterException
 };
 use BlueConsole\Style;
-use ToolsCli\Tools\Fs\Duplicated\Name;
 
 class CopyAndReplaceExistsTool extends Command
 {
@@ -146,6 +146,7 @@ class CopyAndReplaceExistsTool extends Command
         $progressBar = $this->input->getOption('progress-bar');
         $skipped = $this->input->getOption('skipped');
         $sourceDir = $input->getArgument('source');
+        $structure = $this->register->factory(Structure::class, [$sourceDir]);
 
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -162,7 +163,7 @@ class CopyAndReplaceExistsTool extends Command
         }
 
         $this->blueStyle->writeln('Reading directory.');
-        $list = Fs::readDirectory($sourceDir);
+        $list = $structure->getReadDirectory($sourceDir);
         $allFiles = \count($list);
         $this->blueStyle->writeln("All files to copy: $allFiles");
         $this->blueStyle->newLine();
@@ -185,7 +186,7 @@ class CopyAndReplaceExistsTool extends Command
                 $destinationDir = $input->getArgument('destination');
                 $pathToCheck    = $destinationDir . '/' . $file->getFilename();
 
-                if (Fs::exist($pathToCheck)) {
+                if (Structure::exist($pathToCheck)) {
                     $hashOne = hash_file('sha3-256', $file->getRealPath());
                     $hashTwo = hash_file('sha3-256', $pathToCheck);
 
@@ -208,7 +209,7 @@ class CopyAndReplaceExistsTool extends Command
                         $newFileName .= '.' . $file->getExtension();
                     }
 
-                    if (Fs::exist($newFileName)) {
+                    if (Structure::exist($newFileName)) {
                         if (!$progressBar) {
                             $this->blueStyle->errorMessage('Hash file exists: ' . $newFileName);
                         }

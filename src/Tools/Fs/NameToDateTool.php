@@ -21,7 +21,7 @@ use ToolsCli\Console\Display\Style;
 use BlueRegister\{
     Register, RegisterException
 };
-use BlueFilesystem\Fs;
+use BlueFilesystem\StaticObjects\Fs;
 
 class NameToDateTool extends Command
 {
