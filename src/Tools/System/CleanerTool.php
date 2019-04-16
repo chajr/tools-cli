@@ -7,8 +7,14 @@ use Symfony\Component\Console\{
     Output\OutputInterface,
 };
 use ToolsCli\Console\Display\Style;
-use ToolsCli\Console\Command;
-use BlueFilesystem\Fs;
+use BlueFilesystem\StaticObjects\Structure;
+use BlueRegister\{
+    Register, RegisterException
+};
+use ToolsCli\Console\{
+    Command,
+    Alias,
+};
 
 class CleanerTool extends Command
 {
@@ -17,6 +23,27 @@ class CleanerTool extends Command
      */
     protected $config;
 
+    /**
+     * @var Register
+     */
+    protected $register;
+
+    /**
+     * @var Style
+     */
+    protected $blueStyle;
+
+    /**
+     * @param string $name
+     * @param Alias $alias
+     * @param Register $register
+     */
+    public function __construct(string $name, Alias $alias, Register $register)
+    {
+        $this->register = $register;
+        parent::__construct($name, $alias);
+    }
+
     protected function configure() : void
     {
         $this->setName('system:cleaner')
@@ -24,11 +51,9 @@ class CleanerTool extends Command
             ->setHelp('');
         
         /*
-         * clear unwanted files from system (orm move to other directory)
-         * files config: regular expression to search files, and time limit for that files
-         * after file time is exceeded, file or dir is removed
-         * move files to specified destination
+         * size, time (mod, create), regex, extension rules
          * special file with custom actions
+         * allow to set custom class for action
          * accept all php datetime formats (https://www.php.net/manual/en/datetime.formats.php)
          */
     }
@@ -38,25 +63,59 @@ class CleanerTool extends Command
      * @param OutputInterface $output
      * @return int|null|void
      * @throws \InvalidArgumentException
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $this->readConfig();
+
+        try {
+            $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        }
 
         foreach ($this->config as $config) {
             $this->executeAction($config);
         }
     }
 
+    /**
+     * @param array $config
+     * @throws \Exception
+     */
     protected function executeAction(array $config): void
     {
-        $readPath = Fs::readDirectory($config['path'], $config['params']['recursive']);
+        try {
+            $callback = $this->processElementFunction($config);
 
-        foreach ($readPath as $pathVal) {
-            dump($pathVal);
+            $structure = $this->register->factory(Structure::class, [$config['path'], $config['params']['recursive']]);
+            $structure->getReadDirectory();
+            $structure->processSplObjects($callback);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        } catch (\Throwable $exception) {
+            dump($exception);
         }
     }
 
+    /**
+     * @param array $config
+     * @return callable
+     * @throws RegisterException
+     */
+    protected function processElementFunction(array $config): callable
+    {
+        $actionClass = 'ToolsCli\Tools\System\CleanerAction\\' . \strtoupper($config['action']);
+        /** @var \ToolsCli\Tools\System\CleanerAction\Action $action */
+        $action = $this->register->factory($actionClass, [$config['rules'], $this->blueStyle]);
+
+        return $action->getCallback();
+    }
+
+    /**
+     * @throws \RuntimeException
+     */
     protected function readConfig(): void
     {
         try {

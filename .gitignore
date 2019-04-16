@@ -3,4 +3,4 @@ var/cache/*.cache
 etc/config.json
 etc/randomFile.json
 var/storage.json
-var/cleaner.json
+etc/cleaner.json
