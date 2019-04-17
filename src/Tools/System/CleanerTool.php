@@ -53,7 +53,6 @@ class CleanerTool extends Command
         /*
          * size, time (mod, create), regex, extension rules
          * special file with custom actions
-         * allow to set custom class for action
          * accept all php datetime formats (https://www.php.net/manual/en/datetime.formats.php)
          */
     }
@@ -106,7 +105,12 @@ class CleanerTool extends Command
      */
     protected function processElementFunction(array $config): callable
     {
-        $actionClass = 'ToolsCli\Tools\System\CleanerAction\\' . \strtoupper($config['action']);
+        if (\preg_match('/^custom:[a-zA-Z0-9\\\]+/', $config['action'])) {
+            $actionClass = \str_replace('custom:', '', $config['action']);
+        } else {
+            $actionClass = 'ToolsCli\Tools\System\CleanerAction\\' . \strtoupper($config['action']);
+        }
+
         /** @var \ToolsCli\Tools\System\CleanerAction\Action $action */
         $action = $this->register->factory($actionClass, [$config['rules'], $this->blueStyle]);
 
