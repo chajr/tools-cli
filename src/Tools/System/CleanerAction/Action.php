@@ -2,7 +2,7 @@
 
 namespace ToolsCli\Tools\System\CleanerAction;
 
-use ToolsCli\Console\Display\Style;
+use BlueConsole\Style;
 
 interface Action
 {

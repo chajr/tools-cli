@@ -6,7 +6,7 @@ use BlueFilesystem\StaticObjects\{
     Fs,
     Structure
 };
-use ToolsCli\Console\Display\Style;
+use BlueConsole\Style;
 
 class Delete implements Action
 {

@@ -5,8 +5,8 @@ namespace ToolsCli\Tools\System;
 use Symfony\Component\Console\{
     Input\InputInterface,
     Output\OutputInterface,
+    Helper\FormatterHelper,
 };
-use ToolsCli\Console\Display\Style;
 use BlueFilesystem\StaticObjects\Structure;
 use BlueRegister\{
     Register, RegisterException
@@ -15,6 +15,7 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
+use BlueConsole\Style;
 
 class CleanerTool extends Command
 {
@@ -32,6 +33,11 @@ class CleanerTool extends Command
      * @var Style
      */
     protected $blueStyle;
+
+    /**
+     * @var FormatterHelper
+     */
+    protected $formatter;
 
     /**
      * @param string $name
@@ -69,6 +75,7 @@ class CleanerTool extends Command
         $this->readConfig();
 
         try {
+            $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
