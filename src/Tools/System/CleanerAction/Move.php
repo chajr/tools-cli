@@ -6,7 +6,7 @@ use BlueFilesystem\StaticObjects\{
     Fs,
     Structure
 };
-use ToolsCli\Console\Display\Style;
+use BlueConsole\Style;
 
 class Move implements Action
 {
@@ -31,6 +31,7 @@ class Move implements Action
     }
 
     /**
+     * @todo move rules to some generic place
      * @return callable
      */
     public function getCallback(): callable
@@ -42,17 +43,78 @@ class Move implements Action
             $regexp = $rules['regexp'];
             $found = \preg_match($regexp, $fileInfo->getFilename());
 
-            if ($found) {
-                if (!Structure::exist($rules['destination'])) {
-                    throw new \Exception('Destination not found: ' . $path);
-                }
+            if (!$found) {
+                return;
+            }
 
-                $out = Fs::move($path, $rules['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+            switch ($rules['date-type']) {
+                case 'create':
+                    $fileStamp = $fileInfo->getCTime();
+                    break;
 
-                if (!Fs::validateComplexOutput($out)) {
-                    $style->error('Unable to move content: ' . \implode(PHP_EOL, $out));
+                case 'access':
+                    $fileStamp = $fileInfo->getATime();
+                    break;
+
+                case 'modify':
+                    $fileStamp = $fileInfo->getMTime();
+                    break;
+
+                default:
+                    $fileStamp = false;
+                    break;
+            }
+
+            if ($fileStamp) {
+                $fileStamp = (new \DateTime())->setTimestamp($fileStamp);
+                $timeDiff = new \DateTime($rules['date-time']);
+
+                $stampDiff = $timeDiff->getTimestamp();
+                $stampFile = $fileStamp->getTimestamp();
+
+                if ($stampDiff < $stampFile) {
+                    return;
                 }
             }
+
+            $valid = \preg_match('/([><]?)([\d]+)([kmgtpKMGTP])/', $rules['size'], $matches);
+
+            if ($valid) {
+                $sizeSuffix = \strtolower($matches[3]);
+                $reverse = array_flip(self::SIZE_SUFFIX);
+
+                $valCalculated = $matches[2] * 1024 ** ($reverse[$sizeSuffix] +1);
+
+                switch ($matches[1]) {
+                    case '>':
+                        $sizeRuleValid = $fileInfo->getSize() > $valCalculated;
+                        break;
+
+                    case '<':
+                        $sizeRuleValid = $fileInfo->getSize() < $valCalculated;
+                        break;
+
+                    default:
+                        $sizeRuleValid = $fileInfo->getSize() === $valCalculated;
+                        break;
+                }
+
+                if (!$sizeRuleValid) {
+                    return;
+                }
+            }
+
+            if (!Structure::exist($rules['destination'])) {
+                throw new \Exception('Destination not found: ' . $path);
+            }
+
+            $out = Fs::move($path, $rules['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+
+            if (!Fs::validateComplexOutput($out)) {
+                $style->errorMessage("Unable to move file: <fg=yellow;options=bold>{$fileInfo->getFilename()}</>");
+            }
+
+            $style->okMessage("File <fg=yellow;options=bold>{$fileInfo->getFilename()}</> moved successfully");
         };
     }
 }
