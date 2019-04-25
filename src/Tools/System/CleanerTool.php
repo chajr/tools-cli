@@ -57,9 +57,12 @@ class CleanerTool extends Command
             ->setHelp('');
         
         /*
+         * @todo
          * size, time (mod, create), regex, extension rules
          * special file with custom actions
          * accept all php datetime formats (https://www.php.net/manual/en/datetime.formats.php)
+         *
+         * allow to create own rule class/method
          */
     }
 
@@ -119,7 +122,7 @@ class CleanerTool extends Command
         }
 
         /** @var \ToolsCli\Tools\System\CleanerAction\Action $action */
-        $action = $this->register->factory($actionClass, [$config['rules'], $this->blueStyle]);
+        $action = $this->register->factory($actionClass, [$config['rules'], $this->blueStyle, $this->register]);
 
         return $action->getCallback();
     }
