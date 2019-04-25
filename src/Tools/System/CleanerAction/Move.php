@@ -7,6 +7,7 @@ use BlueFilesystem\StaticObjects\{
     Structure
 };
 use BlueConsole\Style;
+use BlueRegister\Register;
 
 class Move implements Action
 {
@@ -21,94 +22,43 @@ class Move implements Action
     protected $blueStyle;
 
     /**
+     * @var Register
+     */
+    protected $register;
+
+    /**
      * @param array $rules
      * @param Style $blueStyle
+     * @param Register $register
      */
-    public function __construct(array $rules, Style $blueStyle)
+    public function __construct(array $rules, Style $blueStyle, Register $register)
     {
         $this->rules = $rules;
         $this->blueStyle = $blueStyle;
+        $this->register = $register;
     }
 
     /**
-     * @todo move rules to some generic place
      * @return callable
      */
     public function getCallback(): callable
     {
-        $rules = $this->rules;
-        $style= $this->blueStyle;
+        $ruleList = $this->rules;
+        $style = $this->blueStyle;
+        $registerObject = $this->register;
 
-        return function (\SplFileInfo $fileInfo, string $path) use ($rules, $style) {
-            $regexp = $rules['regexp'];
-            $found = \preg_match($regexp, $fileInfo->getFilename());
+        return function (\SplFileInfo $fileInfo, string $path) use ($ruleList, $style, $registerObject) {
+            $rule = $registerObject->factory(Rules::class, [$ruleList, $fileInfo]);
 
-            if (!$found) {
+            if (!$rule->isValid()) {
                 return;
             }
 
-            switch ($rules['date-type']) {
-                case 'create':
-                    $fileStamp = $fileInfo->getCTime();
-                    break;
-
-                case 'access':
-                    $fileStamp = $fileInfo->getATime();
-                    break;
-
-                case 'modify':
-                    $fileStamp = $fileInfo->getMTime();
-                    break;
-
-                default:
-                    $fileStamp = false;
-                    break;
-            }
-
-            if ($fileStamp) {
-                $fileStamp = (new \DateTime())->setTimestamp($fileStamp);
-                $timeDiff = new \DateTime($rules['date-time']);
-
-                $stampDiff = $timeDiff->getTimestamp();
-                $stampFile = $fileStamp->getTimestamp();
-
-                if ($stampDiff < $stampFile) {
-                    return;
-                }
-            }
-
-            $valid = \preg_match('/([><]?)([\d]+)([kmgtpKMGTP])/', $rules['size'], $matches);
-
-            if ($valid) {
-                $sizeSuffix = \strtolower($matches[3]);
-                $reverse = array_flip(self::SIZE_SUFFIX);
-
-                $valCalculated = $matches[2] * 1024 ** ($reverse[$sizeSuffix] +1);
-
-                switch ($matches[1]) {
-                    case '>':
-                        $sizeRuleValid = $fileInfo->getSize() > $valCalculated;
-                        break;
-
-                    case '<':
-                        $sizeRuleValid = $fileInfo->getSize() < $valCalculated;
-                        break;
-
-                    default:
-                        $sizeRuleValid = $fileInfo->getSize() === $valCalculated;
-                        break;
-                }
-
-                if (!$sizeRuleValid) {
-                    return;
-                }
-            }
-
-            if (!Structure::exist($rules['destination'])) {
+            if (!Structure::exist($ruleList['destination'])) {
                 throw new \Exception('Destination not found: ' . $path);
             }
 
-            $out = Fs::move($path, $rules['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+            $out = Fs::move($path, $ruleList['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
 
             if (!Fs::validateComplexOutput($out)) {
                 $style->errorMessage("Unable to move file: <fg=yellow;options=bold>{$fileInfo->getFilename()}</>");
