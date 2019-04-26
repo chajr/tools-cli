@@ -14,7 +14,7 @@ class Move implements Action
     /**
      * @var array
      */
-    protected $rules;
+    protected $config;
 
     /**
      * @var Style
@@ -27,13 +27,13 @@ class Move implements Action
     protected $register;
 
     /**
-     * @param array $rules
+     * @param array $config
      * @param Style $blueStyle
      * @param Register $register
      */
-    public function __construct(array $rules, Style $blueStyle, Register $register)
+    public function __construct(array $config, Style $blueStyle, Register $register)
     {
-        $this->rules = $rules;
+        $this->config = $config;
         $this->blueStyle = $blueStyle;
         $this->register = $register;
     }
@@ -43,22 +43,25 @@ class Move implements Action
      */
     public function getCallback(): callable
     {
-        $ruleList = $this->rules;
+        $configList = $this->config;
         $style = $this->blueStyle;
         $registerObject = $this->register;
 
-        return function (\SplFileInfo $fileInfo, string $path) use ($ruleList, $style, $registerObject) {
-            $rule = $registerObject->factory(Rules::class, [$ruleList, $fileInfo]);
+        return function (\SplFileInfo $fileInfo, string $path) use ($configList, $style, $registerObject) {
+            $rule = $registerObject->factory(Rules::class, [$configList, $fileInfo]);
 
             if (!$rule->isValid()) {
                 return;
             }
 
-            if (!Structure::exist($ruleList['destination'])) {
+            if (!Structure::exist($configList['params']['destination'])) {
                 throw new \Exception('Destination not found: ' . $path);
             }
 
-            $out = Fs::move($path, $ruleList['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+            $out = Fs::move(
+                $path,
+                $configList['params']['destination'] . DIRECTORY_SEPARATOR . $fileInfo->getFilename()
+            );
 
             if (!Fs::validateComplexOutput($out)) {
                 $style->errorMessage("Unable to move file: <fg=yellow;options=bold>{$fileInfo->getFilename()}</>");

@@ -11,7 +11,7 @@ class Delete implements Action
     /**
      * @var array
      */
-    protected $rules;
+    protected $config;
 
     /**
      * @var Style
@@ -24,13 +24,13 @@ class Delete implements Action
     protected $register;
 
     /**
-     * @param array $rules
+     * @param array $config
      * @param Style $blueStyle
      * @param Register $register
      */
-    public function __construct(array $rules, Style $blueStyle, Register $register)
+    public function __construct(array $config, Style $blueStyle, Register $register)
     {
-        $this->rules = $rules;
+        $this->config = $config;
         $this->blueStyle = $blueStyle;
         $this->register = $register;
     }
@@ -40,12 +40,12 @@ class Delete implements Action
      */
     public function getCallback(): callable
     {
-        $ruleList = $this->rules;
+        $configList = $this->config;
         $style = $this->blueStyle;
         $registerObject = $this->register;
 
-        return function (\SplFileInfo $fileInfo, string $path) use ($ruleList, $style, $registerObject) {
-            $rule = $registerObject->factory(Rules::class, [$ruleList, $fileInfo]);
+        return function (\SplFileInfo $fileInfo, string $path) use ($configList, $style, $registerObject) {
+            $rule = $registerObject->factory(Rules::class, [$configList, $fileInfo]);
 
             if (!$rule->isValid()) {
                 return;
