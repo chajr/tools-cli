@@ -21,45 +21,79 @@ class Rules implements RulesInterface
     protected $fileInfo;
 
     /**
-     * @param array $rules
-     * @param \SplFileInfo $fileInfo
+     * @var array
      */
-    public function __construct(array $rules, \SplFileInfo $fileInfo)
+    protected $allRules = [
+        'regExp' => false,
+        'time' => false,
+        'size' => false,
+        'extension' => false,
+    ];
+
+    /**
+     * @var bool
+     */
+    protected $isValid = false;
+
+    /**
+     * @param array $config
+     * @param \SplFileInfo $fileInfo
+     * @throws \Exception
+     */
+    public function __construct(array $config, \SplFileInfo $fileInfo)
     {
-        $this->rules = $rules;
+        $this->rules = \array_merge($this->allRules, $config['rules']);
         $this->fileInfo = $fileInfo;
+
+        $this->validate();
     }
 
     /**
      * @return bool
-     * @throws \Exception
      */
     public function isValid(): bool
     {
-        $status = true;
-
-        $status &= $this->regExpRule();
-        $status &= $this->timeRule();
-        $status &= $this->sizeRule();
-
-        return $status;
+        return $this->isValid;
     }
 
     /**
-     * @return bool
-     */
-    protected function regExpRule(): bool
-    {
-        return !!\preg_match($this->rules['regexp'], $this->fileInfo->getFilename());
-    }
-
-    /**
-     * @return bool
      * @throws \Exception
      */
-    protected function timeRule(): bool
+    public function validate(): void
     {
-        switch ($this->rules['date-type']) {
+        foreach ($this->rules as $name => $rule) {
+            if (!$rule) {
+                continue;
+            }
+
+            $methodName = $name . 'Rule';
+            $status = $this->$methodName($rule);
+
+            if ($status === null) {
+                continue;
+            }
+
+            $this->isValid &= $status;
+        }
+    }
+
+    /**
+     * @param string $rule
+     * @return bool
+     */
+    protected function regExpRule(string $rule): bool
+    {
+        return !!\preg_match($rule, $this->fileInfo->getFilename());
+    }
+
+    /**
+     * @param array $rule
+     * @return bool|null
+     * @throws \Exception
+     */
+    protected function timeRule(array $rule):? bool
+    {
+        switch ($rule['type']) {
             case 'create':
                 $fileStamp = $this->fileInfo->getCTime();
                 break;
@@ -73,31 +107,25 @@ class Rules implements RulesInterface
                 break;
 
             default:
-                $fileStamp = false;
-                break;
+                return null;
         }
 
-        if ($fileStamp) {
-            $fileStamp = (new \DateTime())->setTimestamp($fileStamp);
-            $timeDiff = new \DateTime($this->rules['date-time']);
+        $fileStamp = (new \DateTime())->setTimestamp($fileStamp);
+        $timeDiff = new \DateTime($rule['date']);
 
-            $stampDiff = $timeDiff->getTimestamp();
-            $stampFile = $fileStamp->getTimestamp();
+        $stampDiff = $timeDiff->getTimestamp();
+        $stampFile = $fileStamp->getTimestamp();
 
-            if ($stampDiff < $stampFile) {
-                return false;
-            }
-        }
-
-        return true;
+        return !($stampDiff < $stampFile);
     }
 
     /**
-     * @return bool
+     * @param string $rule
+     * @return bool|null
      */
-    protected function sizeRule(): bool
+    protected function sizeRule(string $rule):? bool
     {
-        $valid = \preg_match('/([><]?)([\d]+)([kmgtpKMGTP])/', $this->rules['size'], $matches);
+        $valid = \preg_match('/([><]?)([\d]+)([kmgtpKMGTP])/', $rule, $matches);
 
         if ($valid) {
             $sizeSuffix = \strtolower($matches[3]);
@@ -119,11 +147,18 @@ class Rules implements RulesInterface
                     break;
             }
 
-            if (!$sizeRuleValid) {
-                return false;
-            }
+            return $sizeRuleValid;
         }
 
-        return true;
+        return null;
+    }
+
+    /**
+     * @param string|array $rule
+     * @return bool
+     */
+    protected function extensionRule($rule): bool
+    {
+        return \in_array($this->fileInfo->getExtension(), $rule, true);
     }
 }
