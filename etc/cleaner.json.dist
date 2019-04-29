@@ -1,0 +1,24 @@
+{
+    "list": [
+        {
+            "path": "",
+            "regexp": "",
+            "date-time": "5d", ??
+            "size": "5d", ??
+            "action": "move|delete|custom:namespace",
+            "rules": {
+                "regexp": "/.*\\.torrent$/",
+                "size": ">10MB",
+                "time": {"date" : "5 days ago", "type":  "create|modify|access"},
+                "extension": ".jpg" | ["jpg", "JPG"]
+            },
+            "params": {
+                "destination": "/Users/chajr/Downloads/torrent_tmp",
+                "recursive": true,
+                "follow-symlinks": false
+            }
+        }
+    ]
+}
+
+accept all php datetime formats (https://www.php.net/manual/en/datetime.formats.php)

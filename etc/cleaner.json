@@ -1,0 +1,19 @@
+{
+    "list": [
+        {
+            "path": "/Users/chajr/Downloads/",
+            "action": "move",
+            "rules": {
+                "regExp": "/\\.torrent$/",
+                "time": {"date": "1 days ago", "type": "modify"},
+                "size": ">10k",
+                "extension": ["torrent", "JPG"]
+            },
+            "params": {
+                "destination": "/Users/chajr/Downloads/torrent_tmp",
+                "recursive": false,
+                "follow-symlinks": false
+            }
+        }
+    ]
+}

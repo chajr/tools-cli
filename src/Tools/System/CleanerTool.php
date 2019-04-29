@@ -79,7 +79,7 @@ class CleanerTool extends Command
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         }
 
         foreach ($this->config as $config) {
@@ -100,7 +100,7 @@ class CleanerTool extends Command
             $structure->getReadDirectory();
             $structure->processSplObjects($callback);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         } catch (\Throwable $exception) {
             dump($exception);
         }
@@ -135,7 +135,7 @@ class CleanerTool extends Command
             $this->config = \json_decode($baseConfig, true)['list'];
             //@todo add read from main /etc dir
         } catch (\Throwable $exception) {
-            throw new \RuntimeException($exception);
+            throw new \InvalidArgumentException($exception);
         }
     }
 }
