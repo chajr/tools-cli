@@ -1,6 +1,7 @@
 <?php
 
 namespace ToolsCli\Tools\System\CleanerAction;
+
 use BlueConsole\Style;
 
 interface RulesInterface

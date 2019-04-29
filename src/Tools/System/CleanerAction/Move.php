@@ -48,14 +48,14 @@ class Move implements Action
         $registerObject = $this->register;
 
         return function (\SplFileInfo $fileInfo, string $path) use ($configList, $style, $registerObject) {
-            $rule = $registerObject->factory(Rules::class, [$configList, $fileInfo]);
+            $rule = $registerObject->factory(Rules::class, [$configList, $fileInfo, $style]);
 
             if (!$rule->isValid()) {
                 return;
             }
 
             if (!Structure::exist($configList['params']['destination'])) {
-                throw new \Exception('Destination not found: ' . $path);
+                throw new \InvalidArgumentException('Destination not found: ' . $path);
             }
 
             $out = Fs::move(
