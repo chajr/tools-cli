@@ -6,6 +6,8 @@
 
 namespace ToolsCli\Tools\System\CleanerAction;
 
+use BlueConsole\Style;
+
 class Rules implements RulesInterface
 {
     public const SIZE_SUFFIX = ['k', 'm', 'g', 't', 'p'];
@@ -19,6 +21,11 @@ class Rules implements RulesInterface
      * @var \SplFileInfo
      */
     protected $fileInfo;
+
+    /**
+     * @var Style
+     */
+    protected $blueStyle;
 
     /**
      * @var array
@@ -38,12 +45,13 @@ class Rules implements RulesInterface
     /**
      * @param array $config
      * @param \SplFileInfo $fileInfo
-     * @throws \Exception
+     * @param Style $style
      */
-    public function __construct(array $config, \SplFileInfo $fileInfo)
+    public function __construct(array $config, \SplFileInfo $fileInfo, Style $style)
     {
         $this->rules = \array_merge($this->allRules, $config['rules']);
         $this->fileInfo = $fileInfo;
+        $this->blueStyle = $style;
 
         $this->validate();
     }
@@ -56,25 +64,30 @@ class Rules implements RulesInterface
         return $this->isValid;
     }
 
-    /**
-     * @throws \Exception
-     */
     public function validate(): void
     {
+        $status = false;
+
         foreach ($this->rules as $name => $rule) {
             if (!$rule) {
                 continue;
             }
 
             $methodName = $name . 'Rule';
-            $status = $this->$methodName($rule);
 
-            if ($status === null) {
-                continue;
+            try {
+                $status = $this->$methodName($rule);
+            } catch (\Throwable $exception) {
+                $this->blueStyle->errorMessage($exception->getMessage());
+                break;
             }
 
-            $this->isValid &= $status;
+            if ($status === false) {
+                break;
+            }
         }
+
+        $this->isValid = $status;
     }
 
     /**
@@ -88,10 +101,11 @@ class Rules implements RulesInterface
 
     /**
      * @param array $rule
-     * @return bool|null
+     * @return bool
      * @throws \Exception
+     * @throws CleanerRuleException
      */
-    protected function timeRule(array $rule):? bool
+    protected function timeRule(array $rule): bool
     {
         switch ($rule['type']) {
             case 'create':
@@ -107,7 +121,7 @@ class Rules implements RulesInterface
                 break;
 
             default:
-                return null;
+                throw new CleanerRuleException('Illegal time type: ' . $rule['type']);
         }
 
         $fileStamp = (new \DateTime())->setTimestamp($fileStamp);
@@ -121,9 +135,10 @@ class Rules implements RulesInterface
 
     /**
      * @param string $rule
-     * @return bool|null
+     * @return bool
+     * @throws CleanerRuleException
      */
-    protected function sizeRule(string $rule):? bool
+    protected function sizeRule(string $rule): bool
     {
         $valid = \preg_match('/([><]?)([\d]+)([kmgtpKMGTP])/', $rule, $matches);
 
@@ -150,7 +165,7 @@ class Rules implements RulesInterface
             return $sizeRuleValid;
         }
 
-        return null;
+        throw new CleanerRuleException('Invalid size type: ' . $rule);
     }
 
     /**
