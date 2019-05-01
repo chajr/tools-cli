@@ -1,21 +1,18 @@
 {
     "list": [
         {
-            "path": "",
-            "regexp": "",
-            "date-time": "5d", ??
-            "size": "5d", ??
+            "path": "directory to check",
             "action": "move|delete|custom:namespace",
             "rules": {
-                "regexp": "/.*\\.torrent$/",
+                "regExp": "/.*\\.torrent$/",
                 "size": ">10MB",
                 "time": {"date" : "5 days ago", "type":  "create|modify|access"},
-                "extension": ".jpg" | ["jpg", "JPG"]
+                "extension": ["jpg", "JPG"]
             },
             "params": {
-                "destination": "/Users/chajr/Downloads/torrent_tmp",
-                "recursive": true,
-                "follow-symlinks": false
+                "destination": "directory to move files",
+                "recursive": false|true,
+                "follow-symlinks": false|true
             }
         }
     ]
