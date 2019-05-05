@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cae3d44b034f15be59ac9bf25265f8bd",
+    "content-hash": "f74b45ba2de77140e7d188ad8208461f",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -498,23 +498,24 @@
         },
         {
             "name": "bluetree-service/symfony-console-style",
-            "version": "0.3.0.1",
+            "version": "0.4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/symfony-console-style.git",
-                "reference": "5852e61c4bf527196b39bb3f57eb64ad15ab7f6d"
+                "reference": "24b9a28f6e2fa8b550df01fa14498b943973e06b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/symfony-console-style/zipball/5852e61c4bf527196b39bb3f57eb64ad15ab7f6d",
-                "reference": "5852e61c4bf527196b39bb3f57eb64ad15ab7f6d",
+                "url": "https://api.github.com/repos/bluetree-service/symfony-console-style/zipball/24b9a28f6e2fa8b550df01fa14498b943973e06b",
+                "reference": "24b9a28f6e2fa8b550df01fa14498b943973e06b",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.0",
+                "php": ">=7.1",
                 "symfony/console": "3.4.*|~4.0"
             },
             "require-dev": {
+                "bluetree-service/clover-reporter": "~0.1",
                 "phpunit/phpunit": "4.8.35",
                 "satooshi/php-coveralls": "1.0.*",
                 "symfony/var-dumper": "^4.1"
@@ -536,7 +537,7 @@
                 }
             ],
             "description": "Extends symfony console display style",
-            "time": "2018-10-31T14:36:43+00:00"
+            "time": "2019-05-04T08:52:13+00:00"
         },
         {
             "name": "container-interop/container-interop",

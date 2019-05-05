@@ -22,7 +22,7 @@
         "bluetree-service/container": "~0.1",
         "bluetree-service/filesystem": "^0.2",
         "bluetree-service/data": "~0.2",
-        "bluetree-service/symfony-console-style": "0.3.0.1",
+        "bluetree-service/symfony-console-style": "^0.4",
         "bentools/string-combinations": "^1.2",
         "bluetree-service/benchmark": "^0.5",
         "symfony/var-dumper": "~4.1",
