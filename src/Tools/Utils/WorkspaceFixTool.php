@@ -76,11 +76,17 @@ class WorkspaceFixTool extends Command
             } catch (RegisterException $exception) {
                 throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
             }
-
-            $this->blueStyle->infoMessage('Workspace fixer begin.');
         }
 
         $path = $input->getArgument('path');
+        $message = 'Execution time: ' . (new \DateTime)->format('c');
+
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage($message);
+            $this->blueStyle->infoMessage('Workspace fixer begin.');
+        } else {
+            $output->writeln($message);
+        }
 
         if (!\file_exists($path)) {
             throw new \InvalidArgumentException("Workspace file $path is missing.");
