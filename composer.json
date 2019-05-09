@@ -27,7 +27,8 @@
         "bluetree-service/benchmark": "^0.5",
         "symfony/var-dumper": "~4.1",
         "mikehaertl/php-shellcommand": "^1.4",
-        "bluetree-service/cache": "^0.3.0"
+        "bluetree-service/cache": "^0.3.0",
+        "spatie/array-to-xml": "^2.9"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
