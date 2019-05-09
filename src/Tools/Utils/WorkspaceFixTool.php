@@ -16,6 +16,8 @@ use ToolsCli\Console\{
     Alias,
 };
 use BlueConsole\Style;
+use Spatie\ArrayToXml\ArrayToXml;
+use BlueData\Data\Xml;
 
 class WorkspaceFixTool extends Command
 {
@@ -85,9 +87,9 @@ class WorkspaceFixTool extends Command
         }
 
         $data = \file_get_contents($path);
-        $loadedXml = simplexml_load_string($data);
-        $jsonXml = json_encode($loadedXml);
-        $jsonData = json_decode($jsonXml, true);
+        $loadedXml = \simplexml_load_string($data);
+        $jsonXml = \json_encode($loadedXml);
+        $jsonData = \json_decode($jsonXml, true);
 
         $comment = $jsonData['component'][0]['list']['@attributes']['comment'] ?? '';
 
@@ -105,6 +107,27 @@ class WorkspaceFixTool extends Command
 
         $jsonData['component'][0]['list']['@attributes']['comment'] = '';
 
-        dump($jsonData);
+        $this->convertAndSave($jsonData, $path);
+    }
+
+    /**
+     * @param array $data
+     * @param string $path
+     */
+    protected function convertAndSave(array $data, string $path): void
+    {
+        $baseXml =  ArrayToXml::convert($data, 'project');
+
+        $xml = new Xml;
+        $xml->formatOutput = true;
+        $xml->loadXML($baseXml);
+        $xml->saveXmlFile($path);
+
+        if ($xml->hasErrors()) {
+            $this->blueStyle->errorMessage('Unable to save xml file: ' . $xml->getError());
+            return;
+        }
+
+        $this->blueStyle->okMessage('File changed & saved successfully');
     }
 }
