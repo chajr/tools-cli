@@ -113,14 +113,15 @@ class WorkspaceFixTool extends Command
 
         $jsonData['component'][0]['list']['@attributes']['comment'] = '';
 
-        $this->convertAndSave($jsonData, $path);
+        $this->convertAndSave($jsonData, $path, $output->isVerbose());
     }
 
     /**
      * @param array $data
      * @param string $path
+     * @param bool $isVerbose
      */
-    protected function convertAndSave(array $data, string $path): void
+    protected function convertAndSave(array $data, string $path, bool $isVerbose): void
     {
         $baseXml =  ArrayToXml::convert($data, 'project');
 
@@ -129,11 +130,13 @@ class WorkspaceFixTool extends Command
         $xml->loadXML($baseXml);
         $xml->saveXmlFile($path);
 
-        if ($xml->hasErrors()) {
+        if ($xml->hasErrors() && $isVerbose) {
             $this->blueStyle->errorMessage('Unable to save xml file: ' . $xml->getError());
             return;
         }
 
-        $this->blueStyle->okMessage('File changed & saved successfully');
+        if ($isVerbose) {
+            $this->blueStyle->okMessage('File changed & saved successfully');
+        }
     }
 }
