@@ -82,6 +82,9 @@ class CleanerTool extends Command
             throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         }
 
+        $message = 'Execution time: ' . (new \DateTime)->format('c');
+        $this->blueStyle->infoMessage($message);
+
         foreach ($this->config as $config) {
             $this->executeAction($config);
         }
@@ -96,7 +99,9 @@ class CleanerTool extends Command
         try {
             $callback = $this->processElementFunction($config);
 
-            $structure = $this->register->factory(Structure::class, [$config['path'], $config['params']['recursive']]);
+            $recursive = $config['params']['recursive'] ?? false;
+
+            $structure = $this->register->factory(Structure::class, [$config['path'], $recursive]);
             $structure->getReadDirectory();
             $structure->processSplObjects($callback);
         } catch (RegisterException $exception) {
