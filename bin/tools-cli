@@ -40,8 +40,13 @@ try {
 Timer::stop();
 
 Timer::calculateStats();
-$data = Timer::getFormattedOutput('raw+');
+try {
+    $data = Timer::getFormattedOutput('raw+');
+} catch (Twig_Error_Loader | Twig_Error_Runtime | Twig_Error_Syntax $exception) {
+    
+}
 
+//@todo optionally dont display summary info
 $output->writeln('');
 $output->writeln(' Total time:   <info>' . $data['total_rune_time'] . '</info>');
 $output->writeln(' Total memory: <info>' . $data['total_memory'] . '</info>');

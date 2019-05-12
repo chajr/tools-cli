@@ -61,6 +61,7 @@ class CleanerTool extends Command
          * @todo copy action
          * @todo for copy and move change filename
          * @todo follow symlinks option
+         * @todo add run command befor & run command after
          */
     }
 

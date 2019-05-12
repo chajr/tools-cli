@@ -45,6 +45,7 @@ class Commands extends Container
     {
         //@todo read configuration
         //@todo create bootstrap function
+        //@todo create blueStyle
         $this->alias = $alias;
         $this->register = new Register([]);
 

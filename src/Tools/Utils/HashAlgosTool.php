@@ -72,6 +72,8 @@ class HashAlgosTool extends Command
             throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         }
 
+        $this->blueStyle->toggleShowTimer();
+
         $algList = \hash_algos();
 
         $this->blueStyle->okMessage('Start profiling ' . \count($algList) . ' algorithms.');
