@@ -4,3 +4,4 @@ etc/config.json
 etc/randomFile.json
 var/storage.json
 etc/cleaner.json
+etc/alias.ini
