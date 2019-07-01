@@ -97,7 +97,15 @@ class WorkspaceFixTool extends Command
         $jsonXml = \json_encode($loadedXml);
         $jsonData = \json_decode($jsonXml, true);
 
-        $comment = $jsonData['component'][0]['list']['@attributes']['comment'] ?? '';
+        $comment = null;
+        $index = 0;
+
+        foreach ($jsonData['component'] as $index => $element) {
+            if ($element['@attributes']['name'] === 'ChangeListManager') {
+                $comment = $element['list']['@attributes']['comment'] ?? '';
+                break;
+            }
+        }
 
         if (!$comment) {
             $message = 'Element already empty.';
@@ -111,7 +119,7 @@ class WorkspaceFixTool extends Command
             return;
         }
 
-        $jsonData['component'][0]['list']['@attributes']['comment'] = '';
+        $jsonData['component'][$index]['list']['@attributes']['comment'] = '';
 
         $this->convertAndSave($jsonData, $path, $output->isVerbose());
     }
