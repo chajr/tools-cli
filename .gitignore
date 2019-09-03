@@ -5,3 +5,4 @@ etc/randomFile.json
 var/storage.json
 etc/cleaner.json
 etc/alias.ini
+etc/wallhaven.json

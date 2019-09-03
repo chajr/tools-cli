@@ -18,8 +18,6 @@ use BlueConsole\Style;
 
 class WallhavenSorterTool extends Command
 {
-    private const URL = '';
-
     /**
      * @var Register
      */
@@ -46,6 +44,11 @@ class WallhavenSorterTool extends Command
     protected $favoriteIds = '';
 
     /**
+     * @var array
+     */
+    protected $wallConfig = [];
+
+    /**
      * @param string $name
      * @param Alias $alias
      * @param Register $register
@@ -53,7 +56,12 @@ class WallhavenSorterTool extends Command
     public function __construct(string $name, Alias $alias, Register $register)
     {
         $this->register = $register;
-        $this->connection = new \PDO('', 'root', 'root');
+        $this->wallConfig = $this->readConfig('wallhaven');
+        $this->connection = new \PDO(
+            $this->wallConfig['db_dns'],
+            $this->wallConfig['db_user'],
+            $this->wallConfig['db_pass']
+        );
 
         parent::__construct($name, $alias);
     }
@@ -120,7 +128,7 @@ class WallhavenSorterTool extends Command
     {
         //@todo log informations
         //@todo load ids and check if exists, if exists break scrapping
-        $web = \file_get_contents(self::URL);
+        $web = \file_get_contents($this->wallConfig['fav_url']);
         \preg_match('/data-pagination="({.*})"/', $web, $paginationMatch);
         //@todo log info about favorites
         $paginationData = \json_decode(\html_entity_decode($paginationMatch[1]), true);
