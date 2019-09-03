@@ -22,7 +22,7 @@ class CleanerTool extends Command
     /**
      * @var array
      */
-    protected $config;
+    protected $cleanerConfig = [];
 
     /**
      * @var Register
@@ -47,6 +47,8 @@ class CleanerTool extends Command
     public function __construct(string $name, Alias $alias, Register $register)
     {
         $this->register = $register;
+        $this->cleanerConfig = $this->readConfig('cleaner');
+
         parent::__construct($name, $alias);
     }
 
@@ -86,7 +88,7 @@ class CleanerTool extends Command
         $message = 'Execution time: ' . (new \DateTime)->format('c');
         $this->blueStyle->infoMessage($message);
 
-        foreach ($this->config as $config) {
+        foreach ($this->cleanerConfig as $config) {
             $this->executeAction($config);
         }
     }
@@ -129,19 +131,5 @@ class CleanerTool extends Command
         $action = $this->register->factory($actionClass, [$config, $this->blueStyle, $this->register]);
 
         return $action->getCallback();
-    }
-
-    /**
-     * @throws \RuntimeException
-     */
-    protected function readConfig(): void
-    {
-        try {
-            $baseConfig = file_get_contents(__DIR__ . '/../../../etc/cleaner.json');
-            $this->config = \json_decode($baseConfig, true)['list'];
-            //@todo add read from main /etc dir
-        } catch (\Throwable $exception) {
-            throw new \InvalidArgumentException($exception);
-        }
     }
 }

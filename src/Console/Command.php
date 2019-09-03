@@ -17,12 +17,18 @@ class Command extends BaseCommand
     protected $commandName;
 
     /**
+     * @var array
+     */
+    protected $config;
+
+    /**
      * @param string $name
      * @param $alias Alias
      */
     public function __construct(string $name, Alias $alias)
     {
         $this->alias = $alias;
+        $this->config = $this->readConfig('config');
 
         parent::__construct($name);
     }
@@ -52,5 +58,20 @@ class Command extends BaseCommand
         }
 
         return $alias;
+    }
+
+    /**
+     * @param string $configJsonName
+     * @return array
+     */
+    protected function readConfig(string $configJsonName): array
+    {
+        try {
+            $baseConfig = file_get_contents(__DIR__ . "/../../../etc/$configJsonName.json");
+            return \json_decode($baseConfig, true)['list'];
+            //@todo add read from main /etc dir
+        } catch (\Throwable $exception) {
+            throw new \InvalidArgumentException($exception);
+        }
     }
 }
