@@ -14,7 +14,7 @@ class RandomFileTool extends Command
     /**
      * @var array
      */
-    protected $config = [];
+    protected $randConfig = [];
 
     protected function configure() : void
     {
@@ -85,21 +85,21 @@ class RandomFileTool extends Command
         }
 
         $configData = \file_get_contents($config);
-        $this->config = \json_decode($configData, true);
+        $this->randConfig = \json_decode($configData, true);
 
-        if (!file_exists($this->config['config']['storage'])) {
-            throw new \ErrorException('Missing storage file: ' . $this->config['config']['storage']);
+        if (!file_exists($this->randConfig['config']['storage'])) {
+            throw new \ErrorException('Missing storage file: ' . $this->randConfig['config']['storage']);
         }
 
-        $group = $input->getArgument('group') ?? \key($this->config['directories']);
+        $group = $input->getArgument('group') ?? \key($this->randConfig['directories']);
 
-        foreach ($this->config['directories'][$group] as $directory) {
+        foreach ($this->randConfig['directories'][$group] as $directory) {
             $paths = self::returnPaths(self::readDirectory($directory, true));
             $allFiles += $paths['file'];
         }
 
         if (!$input->getOption('skip-storage')) {
-            $generated = \file_get_contents($this->config['config']['storage']);
+            $generated = \file_get_contents($this->randConfig['config']['storage']);
             $storage = \json_decode($generated, true);
 
             foreach ($storage as $files) {
@@ -111,7 +111,7 @@ class RandomFileTool extends Command
 
         if ($this->hasImportantFile()) {
             $importantList = [];
-            $prefix = $this->config['config']['importantFilePrefix'];
+            $prefix = $this->randConfig['config']['importantFilePrefix'];
 
             foreach ($allFiles as $file) {
                 $fileInfo = new \SplFileInfo($file);
@@ -139,7 +139,7 @@ class RandomFileTool extends Command
             ];
 
             $newStorage = \json_encode($storage, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-            \file_put_contents($this->config['config']['storage'], $newStorage);
+            \file_put_contents($this->randConfig['config']['storage'], $newStorage);
         }
 
         echo '"' . $randFile . '"';
@@ -160,7 +160,7 @@ class RandomFileTool extends Command
      */
     protected function hasImportantFile() : bool
     {
-        $randCheck = $this->config['config']['importantFileCheckout'];
+        $randCheck = $this->randConfig['config']['importantFileCheckout'];
 
         for ($counter = 0; $counter < $randCheck; $counter++) {
             $rand = random_int(0, 1);
