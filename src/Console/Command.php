@@ -67,8 +67,8 @@ class Command extends BaseCommand
     protected function readConfig(string $configJsonName): array
     {
         try {
-            $baseConfig = file_get_contents(__DIR__ . "/../../../etc/$configJsonName.json");
-            return \json_decode($baseConfig, true)['list'];
+            $baseConfig = file_get_contents(__DIR__ . "/../../etc/$configJsonName.json");
+            return \json_decode($baseConfig, true);
             //@todo add read from main /etc dir
         } catch (\Throwable $exception) {
             throw new \InvalidArgumentException($exception);

@@ -47,7 +47,7 @@ class CleanerTool extends Command
     public function __construct(string $name, Alias $alias, Register $register)
     {
         $this->register = $register;
-        $this->cleanerConfig = $this->readConfig('cleaner');
+        $this->cleanerConfig = $this->readConfig('cleaner')['list'];
 
         parent::__construct($name, $alias);
     }
