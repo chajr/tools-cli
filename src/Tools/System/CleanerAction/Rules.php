@@ -32,6 +32,7 @@ class Rules implements RulesInterface
      */
     protected $allRules = [
         'regExp' => false,
+        '-regExp' => false, //@todo negative regex, search for not matching (like grep -v)
         'time' => false,
         'size' => false,
         'extension' => false,
