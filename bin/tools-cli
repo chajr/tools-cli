@@ -33,7 +33,7 @@ try {
     //$output->setDecorated(true);
 
     $code = $application->run();
-} catch (\Exception $exception) {
+} catch (Throwable $exception) {
     $output->writeln('<error>' . $exception->getMessage() . '</error>');
 }
 
