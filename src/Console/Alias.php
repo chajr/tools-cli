@@ -25,6 +25,7 @@ class Alias
             throw new \DomainException('Missing command. Type "tools-cli list" to get list of commands');
         }
 
+        //@todo add main name from array ([FS]fs:command -> [FS]command)
         $aliases = $this->loadAliases();
         $this->aliases = array_flip($aliases);
 

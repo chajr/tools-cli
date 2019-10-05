@@ -57,11 +57,11 @@ class WallhavenSorterTool extends Command
     {
         $this->register = $register;
         $this->wallConfig = $this->readConfig('wallhaven');
-        $this->connection = new \PDO(
-            $this->wallConfig['db_dns'],
-            $this->wallConfig['db_user'],
-            $this->wallConfig['db_pass']
-        );
+//        $this->connection = new \PDO(
+//            $this->wallConfig['db_dns'],
+//            $this->wallConfig['db_user'],
+//            $this->wallConfig['db_pass']
+//        );
 
         parent::__construct($name, $alias);
     }

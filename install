@@ -1,4 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+//create etc/tools-cli dir
+//copy ./etc/*dist to /etc/tools-cli
+//remove dist from filenames
 echo 'installed';

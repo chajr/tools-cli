@@ -28,7 +28,8 @@
         "symfony/var-dumper": "~4.1",
         "mikehaertl/php-shellcommand": "^1.4",
         "bluetree-service/cache": "^0.3.0",
-        "spatie/array-to-xml": "^2.9"
+        "spatie/array-to-xml": "^2.9",
+        "react/child-process": "^0.6.1"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",

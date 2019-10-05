@@ -21,6 +21,8 @@ use BlueRegister\{
 };
 use BlueConsole\Style;
 use ToolsCli\Tools\Fs\Duplicated\Name;
+use React\EventLoop\Factory;
+use React\ChildProcess\Process;
 
 class DuplicatedFilesTool extends Command
 {
@@ -123,6 +125,14 @@ class DuplicatedFilesTool extends Command
             'Show massage on progress bar (like filename during hashing)'
         );
 
+        $this->addOption(
+            'thread',
+            't',
+            InputArgument::OPTIONAL,
+            'Set number of threads used to calculate hash',
+            1
+        );
+
 //        $this->addOption(
 //            'hash',
 //            '',
@@ -146,15 +156,10 @@ class DuplicatedFilesTool extends Command
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
-            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
             $structure = $this->register->factory(Structure::class, [$input->getArgument('source'), true]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
-
-        $this->progressBar->setFormat(
-            $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
-        );
 
         $this->blueStyle->writeln('Reading directory.');
         $fileList = $structure->returnPaths()['file'];
@@ -163,7 +168,42 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->newLine();
 
         $this->blueStyle->writeln('Building file hash list.');
-        $list = $this->buildList($fileList);
+//        $list = $this->buildList($fileList);
+
+        if ($input->getOption('thread') > 1) {
+//            $childProcess = $this->register->factory();
+
+            $processArrays = \array_chunk($fileList, $input->getOption('thread'));
+
+            $loop = Factory::create();
+            $dir = __DIR__;
+            $data = [];
+
+            foreach ($processArrays as $processArray) {
+                $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
+                $first = new Process("php $dir/Duplicated/Hash.php < \"$hashes\"");
+                $first->start($loop);
+
+                $first->stdout->on('data', static function ($chunk) use (&$data) {
+                    $data = \array_merge($data, \json_decode($chunk, true, 512, JSON_THROW_ON_ERROR));
+                    dump($data);
+                });
+            }
+
+            $loop->run();
+
+//sleep (3);
+            dump($data);
+        } else {
+//            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+//
+//            $this->progressBar->setFormat(
+//                $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
+//            );
+        }
+
+
+        exit;
 
         $this->blueStyle->newLine();
         $this->blueStyle->writeln('Compare files.');
@@ -180,43 +220,43 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->newLine();
     }
 
-    /**
-     * @param array $fileList
-     * @return array
-     */
-    protected function buildList(array $fileList): array
-    {
-        $hashes = [];
-        $names  = [];
-        $this->progressBar->start(\count($fileList));
-
-        foreach ($fileList as $file) {
-            $this->progressBar->advance();
-
-            if ($this->input->getOption('progress-info')) {
-                $this->progressBar->setMessage($file);
-            }
-
-            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
-                continue;
-            }
-
-            if ($this->input->getOption('check-by-name')) {
-                $fileInfo = new \SplFileInfo($file);
-                $name = $fileInfo->getFilename();
-
-                $names[$file] = $name;
-            } else {
-                $hash = hash_file('sha3-256', $file);
-
-                $hashes[$hash][] = $file;
-            }
-        }
-
-        $this->progressBar->finish();
-
-        return [$names, $hashes];
-    }
+//    /**
+//     * @param array $fileList
+//     * @return array
+//     */
+//    protected function buildList(array $fileList): array
+//    {
+//        $hashes = [];
+//        $names = [];
+////        $this->progressBar->start(\count($fileList));
+//
+//        foreach ($fileList as $file) {
+////            $this->progressBar->advance();
+//
+////            if ($this->input->getOption('progress-info')) {
+////                $this->progressBar->setMessage($file);
+////            }
+//
+//            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
+//                continue;
+//            }
+//
+//            if ($this->input->getOption('check-by-name')) {
+//                $fileInfo = new \SplFileInfo($file);
+//                $name = $fileInfo->getFilename();
+//
+//                $names[$file] = $name;
+//            } else {
+//                $hash = hash_file('sha3-256', $file);
+//
+//                $hashes[$hash][] = $file;
+//            }
+//        }
+//
+////        $this->progressBar->finish();
+//
+//        return [$names, $hashes];
+//    }
 
     /**
      * @param array $list
