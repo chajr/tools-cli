@@ -173,7 +173,10 @@ class DuplicatedFilesTool extends Command
 
         $this->blueStyle->writeln('Building file hash list.');
         $hashFiles = [];
-        $data = [];
+        $data = [
+            'hashes' => [],
+            'names' => [],
+        ];
 
         if ($input->getOption('thread') > 0) {
             $threads = $input->getOption('thread');
@@ -198,7 +201,7 @@ class DuplicatedFilesTool extends Command
 
                 $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
                     try {
-                        $data = \array_merge(
+                        $data = \array_merge_recursive(
                             $data,
                             \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
                         );
