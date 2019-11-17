@@ -23,6 +23,8 @@ use BlueConsole\Style;
 use ToolsCli\Tools\Fs\Duplicated\Name;
 use React\EventLoop\Factory;
 use React\ChildProcess\Process;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 
 class DuplicatedFilesTool extends Command
 {
@@ -173,22 +175,41 @@ class DuplicatedFilesTool extends Command
         if ($input->getOption('thread') > 1) {
 //            $childProcess = $this->register->factory();
 
-            $processArrays = \array_chunk($fileList, $input->getOption('thread'));
+            $threads = $input->getOption('thread');
+//            dump(\count($fileList) / $threads, \round(\count($fileList) / $threads));
+            $chunkValue = \round(\count($fileList) / $threads);
+            $processArrays = \array_chunk($fileList, $chunkValue);
 
             $loop = Factory::create();
             $dir = __DIR__;
             $data = [];
 
+//            dump(count($processArrays));
+
             foreach ($processArrays as $processArray) {
                 $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-                $first = new Process("php $dir/Duplicated/Hash.php < \"$hashes\"");
+//                $hashes = '["/Users/chajr/w/wallhaven-113320.jpg"]';
+                
+                //generete uuid for file, after process end delete everything
+                $uuid = $this->getUuid();
+                $path = "$dir/../../../var/tmp/dup/$uuid.json";
+                \file_put_contents($path, $hashes);
+                
+                $first = new Process("php $dir/Duplicated/Hash.php < $path");
+//                $first = new Process("echo '[\"\/Users\/chajr\/w\/wallhaven-113320.jpg\"]' | php $dir/Duplicated/Hash.php");
+//                $first = new Process("echo '$hashes' | php $dir/Duplicated/Hash.php");
                 $first->start($loop);
 
                 $first->stdout->on('data', static function ($chunk) use (&$data) {
+                    dump($chunk);
                     $data = \array_merge($data, \json_decode($chunk, true, 512, JSON_THROW_ON_ERROR));
-                    dump($data);
+                });
+                $first->on('exit', function ($code, $term) {
+                    echo 'EXIT with code ' . $code . PHP_EOL;
                 });
             }
+
+
 
             $loop->run();
 
@@ -257,6 +278,20 @@ class DuplicatedFilesTool extends Command
 //
 //        return [$names, $hashes];
 //    }
+
+    /**
+     * @return string
+     */
+    protected function getUuid(): string
+    {
+        try {
+            $uuid5 = Uuid::uuid4();
+
+            return $uuid5->toString();
+        } catch (\Exception | UnsatisfiedDependencyException $exception) {
+            return \hash_file('sha3-256', \microtime(true));
+        }
+    }
 
     /**
      * @param array $list
