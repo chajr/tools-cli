@@ -15,6 +15,7 @@ use ToolsCli\Console\{
 };
 use ToolsCli\Tools\Fs\Duplicated\Strategy;
 use BlueFilesystem\StaticObjects\Structure;
+use BlueFilesystem\StaticObjects\Fs;
 use BlueData\Data\Formats;
 use BlueRegister\{
     Register, RegisterException
@@ -132,7 +133,7 @@ class DuplicatedFilesTool extends Command
             't',
             InputArgument::OPTIONAL,
             'Set number of threads used to calculate hash',
-            1
+            0
         );
 
 //        $this->addOption(
@@ -158,6 +159,7 @@ class DuplicatedFilesTool extends Command
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+            /** @var Structure $structure */
             $structure = $this->register->factory(Structure::class, [$input->getArgument('source'), true]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
@@ -170,65 +172,62 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->newLine();
 
         $this->blueStyle->writeln('Building file hash list.');
-//        $list = $this->buildList($fileList);
+        $hashFiles = [];
+        $data = [];
 
-        if ($input->getOption('thread') > 1) {
-//            $childProcess = $this->register->factory();
-
+        if ($input->getOption('thread') > 0) {
             $threads = $input->getOption('thread');
-//            dump(\count($fileList) / $threads, \round(\count($fileList) / $threads));
             $chunkValue = \round(\count($fileList) / $threads);
             $processArrays = \array_chunk($fileList, $chunkValue);
 
             $loop = Factory::create();
             $dir = __DIR__;
-            $data = [];
-
-//            dump(count($processArrays));
+            $counter = 0;
 
             foreach ($processArrays as $processArray) {
+                $counter++;
                 $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-//                $hashes = '["/Users/chajr/w/wallhaven-113320.jpg"]';
-                
-                //generete uuid for file, after process end delete everything
+
                 $uuid = $this->getUuid();
                 $path = "$dir/../../../var/tmp/dup/$uuid.json";
+                $hashFiles[] = $path;
                 \file_put_contents($path, $hashes);
-                
-                $first = new Process("php $dir/Duplicated/Hash.php < $path");
-//                $first = new Process("echo '[\"\/Users\/chajr\/w\/wallhaven-113320.jpg\"]' | php $dir/Duplicated/Hash.php");
-//                $first = new Process("echo '$hashes' | php $dir/Duplicated/Hash.php");
+
+                $first = new Process("php $dir/Duplicated/Hash.php $path");
                 $first->start($loop);
 
-                $first->stdout->on('data', static function ($chunk) use (&$data) {
-                    dump($chunk);
-                    $data = \array_merge($data, \json_decode($chunk, true, 512, JSON_THROW_ON_ERROR));
+                $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
+                    try {
+                        $data = \array_merge(
+                            $data,
+                            \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
+                        );
+                    } catch (RuntimeException | JsonException $exception) {
+                        $message = $exception->getMessage();
+                        echo "{\"error\": \"$message\"}";
+                    }
                 });
-                $first->on('exit', function ($code, $term) {
-                    echo 'EXIT with code ' . $code . PHP_EOL;
+                $first->on('exit', static function ($code) use ($counter) {
+                    echo "Process $counter exited with code " . $code . PHP_EOL;
                 });
             }
 
-
-
             $loop->run();
-
-//sleep (3);
-            dump($data);
         } else {
-//            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
-//
-//            $this->progressBar->setFormat(
-//                $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
-//            );
+            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
+
+            $this->progressBar->setFormat(
+                $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
+            );
         }
 
-
-        exit;
+        foreach ($hashFiles as $hasFile) {
+            Fs::delete($hasFile);
+        }
 
         $this->blueStyle->newLine();
         $this->blueStyle->writeln('Compare files.');
-        $this->duplicationCheckStrategy($list);
+        $this->duplicationCheckStrategy($data);
 
         if ($input->getOption('interactive')) {
             $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
@@ -299,7 +298,8 @@ class DuplicatedFilesTool extends Command
      */
     protected function duplicationCheckStrategy(array $list) : void
     {
-        [$names, $hashes] = $list;
+        $hashes = $list['hashes'];
+        $names = $list['names'];
         $name = 'Interactive';
 
         if (!$this->input->getOption('interactive')) {
