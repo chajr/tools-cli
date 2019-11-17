@@ -1,5 +1,7 @@
 vendor
 var/cache/*.cache
+var/tmp/
+!var/tmp/dup/.gitkeep
 etc/config.json
 etc/randomFile.json
 var/storage.json
