@@ -135,6 +135,13 @@ class DuplicatedFilesTool extends Command
             'Set number of threads used to calculate hash',
             0
         );
+        
+        /**
+         * @todo thread progress
+         * @todo interactive mode count display
+         * @todo display number of duplication before start
+         * @todo check by size first
+         */
 
 //        $this->addOption(
 //            'hash',
@@ -242,44 +249,6 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
         $this->blueStyle->newLine();
     }
-
-//    /**
-//     * @param array $fileList
-//     * @return array
-//     */
-//    protected function buildList(array $fileList): array
-//    {
-//        $hashes = [];
-//        $names = [];
-////        $this->progressBar->start(\count($fileList));
-//
-//        foreach ($fileList as $file) {
-////            $this->progressBar->advance();
-//
-////            if ($this->input->getOption('progress-info')) {
-////                $this->progressBar->setMessage($file);
-////            }
-//
-//            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
-//                continue;
-//            }
-//
-//            if ($this->input->getOption('check-by-name')) {
-//                $fileInfo = new \SplFileInfo($file);
-//                $name = $fileInfo->getFilename();
-//
-//                $names[$file] = $name;
-//            } else {
-//                $hash = hash_file('sha3-256', $file);
-//
-//                $hashes[$hash][] = $file;
-//            }
-//        }
-//
-////        $this->progressBar->finish();
-//
-//        return [$names, $hashes];
-//    }
 
     /**
      * @return string
