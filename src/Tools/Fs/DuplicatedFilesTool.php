@@ -138,9 +138,8 @@ class DuplicatedFilesTool extends Command
         
         /**
          * @todo thread progress
-         * @todo interactive mode count display
-         * @todo display number of duplication before start
          * @todo check by size first
+         * @todo read multiple directories
          */
 
 //        $this->addOption(
@@ -172,13 +171,13 @@ class DuplicatedFilesTool extends Command
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
 
-        $this->blueStyle->writeln('Reading directory.');
+        $this->blueStyle->title('Check file duplications');
+        $this->blueStyle->infoMessage('Reading directory.');
         $fileList = $structure->returnPaths()['file'];
         $allFiles = \count($fileList);
-        $this->blueStyle->writeln("All files to check: $allFiles");
-        $this->blueStyle->newLine();
+        $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
 
-        $this->blueStyle->writeln('Building file hash list.');
+        $this->blueStyle->infoMessage('Building file hash list.');
         $hashFiles = [];
         $data = [
             'hashes' => [],
@@ -205,20 +204,23 @@ class DuplicatedFilesTool extends Command
 
                 $first = new Process("php $dir/Duplicated/Hash.php $path");
                 $first->start($loop);
+                $self = $this;
 
                 $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
+                    //check $chunk is there some error message
+
                     try {
                         $data = \array_merge_recursive(
                             $data,
                             \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
                         );
                     } catch (RuntimeException | JsonException $exception) {
-                        $message = $exception->getMessage();
-                        echo "{\"error\": \"$message\"}";
+                        $this->blueStyle->errorMessage($exception->getMessage());
                     }
                 });
-                $first->on('exit', static function ($code) use ($counter) {
-                    echo "Process $counter exited with code " . $code . PHP_EOL;
+
+                $first->on('exit', static function ($code) use ($counter, $self) {
+                    $self->blueStyle->infoMessage("Process <options=bold>$counter</> exited with code <info>$code</>");
                 });
             }
 
@@ -235,18 +237,17 @@ class DuplicatedFilesTool extends Command
             Fs::delete($hasFile);
         }
 
-        $this->blueStyle->newLine();
-        $this->blueStyle->writeln('Compare files.');
+        $this->blueStyle->infoMessage('Compare files.');
         $this->duplicationCheckStrategy($data);
 
-        if ($input->getOption('interactive')) {
-            $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
-            $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
-            $this->blueStyle->newLine();
-        }
+//        if ($input->getOption('interactive')) {
+//            $this->blueStyle->infoMessage('Deleted files: ' . $this->deleteCounter);
+//            $this->blueStyle->infoMessage('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
+//            $this->blueStyle->newLine();
+//        }
 
-        $this->blueStyle->writeln('Duplicated files: ' . $this->duplicatedFiles);
-        $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
+        $this->blueStyle->infoMessage('Duplicated files: ' . $this->duplicatedFiles);
+        $this->blueStyle->infoMessage('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
         $this->blueStyle->newLine();
     }
 

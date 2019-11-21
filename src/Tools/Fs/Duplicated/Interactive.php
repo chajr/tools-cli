@@ -10,6 +10,11 @@ use BlueFilesystem\StaticObjects\Fs;
 class Interactive implements Strategy
 {
     /**
+     * @todo use \BlueConsole\MultiSelect::MOD_LINE_CHAR after library update
+     */
+    public const MOD_LINE_CHAR = "\033[1A";
+
+    /**
      * @var \BlueConsole\Style
      */
     protected $blueStyle;
@@ -26,24 +31,26 @@ class Interactive implements Strategy
 
     /**
      * @param DuplicatedFilesTool $dft
+     * @throws \Exception
      */
     public function __construct(DuplicatedFilesTool $dft)
     {
         $this->blueStyle = $dft->getBlueStyle();
         $this->multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
 
-        $this->blueStyle->writeln('Deleted files: ' . $this->deleteCounter);
-        $this->blueStyle->writeln('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
-        $this->blueStyle->newLine();
+        $this->blueStyle->infoMessage('Deleted files: ' . $this->deleteCounter);
+        $this->blueStyle->infoMessage('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
     }
 
     /**
      * @param array $hash
      * @return Interactive
+     * @throws \Exception
      */
     public function checkByHash(array $hash) : Strategy
     {
-        $this->blueStyle->writeln('Duplications:');
+        $this->duplicationsInfo($hash);
+        $this->blueStyle->newLine(2);
 
         $this->interactive($hash, $this->multiselect);
 
@@ -69,6 +76,7 @@ class Interactive implements Strategy
      * @param array $hash
      * @param MultiSelect $multiselect
      * @return $this
+     * @throws \Exception
      */
     protected function interactive(array $hash, MultiSelect $multiselect) : self
     {
@@ -94,16 +102,30 @@ class Interactive implements Strategy
     }
 
     /**
+     * @param array $hash
+     * @throws \Exception
+     */
+    protected function duplicationsInfo(array $hash): void
+    {
+        $duplications = \count($hash);
+
+        $this->blueStyle->infoMessage("Duplications: <info>$duplications</>");
+    }
+
+    /**
      * @param array $selected
      * @param array $hash
+     * @throws \Exception
      */
     protected function processRemoving(array $selected, array $hash) : void
     {
         foreach (array_keys($selected) as $idToDelete) {
             //delete process
             $this->deleteSizeCounter += filesize($hash[$idToDelete]);
-            $this->blueStyle->warningMessage('Removing: ' . $hash[$idToDelete]);
+            $this->blueStyle->infoMessage('Removing: ' . $hash[$idToDelete]);
             $out = Fs::delete($hash[$idToDelete]);
+
+            echo self::MOD_LINE_CHAR;
 
             if (reset($out)) {
                 $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
