@@ -96,7 +96,7 @@ class DuplicatedFilesTool extends Command
 
         $this->addArgument(
             'source',
-            InputArgument::REQUIRED,
+            InputArgument::IS_ARRAY,
             'source files to check'
         );
 
@@ -139,15 +139,7 @@ class DuplicatedFilesTool extends Command
         /**
          * @todo thread progress
          * @todo check by size first
-         * @todo read multiple directories
          */
-
-//        $this->addOption(
-//            'hash',
-//            '',
-//            null,
-//            'display files hashes ??? only duplicated, all files??'
-//        );
     }
 
     /**
@@ -165,19 +157,19 @@ class DuplicatedFilesTool extends Command
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
-            /** @var Structure $structure */
-            $structure = $this->register->factory(Structure::class, [$input->getArgument('source'), true]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
 
         $this->blueStyle->title('Check file duplications');
         $this->blueStyle->infoMessage('Reading directory.');
-        $fileList = $structure->returnPaths()['file'];
-        $allFiles = \count($fileList);
-        $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
 
+        $fileList = $this->readDirectories($input->getArgument('source'));
+        $allFiles = \count($fileList);
+
+        $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
         $this->blueStyle->infoMessage('Building file hash list.');
+
         $hashFiles = [];
         $data = [
             'hashes' => [],
@@ -253,6 +245,28 @@ class DuplicatedFilesTool extends Command
             'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
         );
         $this->blueStyle->newLine();
+    }
+
+    /**
+     * @param array $paths
+     * @return array
+     * @throws \Exception
+     */
+    protected function readDirectories(array $paths): array
+    {
+        $fileList = [];
+
+        foreach ($paths as $path) {
+            try {
+                /** @var Structure $structure */
+                $structure = $this->register->factory(Structure::class, [$path, true]);
+                $fileList = \array_merge($fileList, $structure->returnPaths()['file']);
+            } catch (RegisterException $exception) {
+                $this->blueStyle->errorMessage('RegisterException: ' . $exception->getMessage());
+            }
+        }
+
+        return $fileList;
     }
 
     /**
