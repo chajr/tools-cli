@@ -22,8 +22,11 @@ use BlueRegister\{
 };
 use BlueConsole\Style;
 use ToolsCli\Tools\Fs\Duplicated\Name;
-use React\EventLoop\Factory;
-use React\ChildProcess\Process;
+use React\{
+    EventLoop\Factory,
+    ChildProcess\Process,
+    EventLoop\LoopInterface,
+};
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 
@@ -183,38 +186,8 @@ class DuplicatedFilesTool extends Command
 
             $loop = Factory::create();
             $dir = __DIR__;
-            $counter = 0;
 
-            foreach ($processArrays as $processArray) {
-                $counter++;
-                $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-
-                $uuid = $this->getUuid();
-                $path = "$dir/../../../var/tmp/dup/$uuid.json";
-                $hashFiles[] = $path;
-                \file_put_contents($path, $hashes);
-
-                $first = new Process("php $dir/Duplicated/Hash.php $path");
-                $first->start($loop);
-                $self = $this;
-
-                $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
-                    //check $chunk is there some error message
-
-                    try {
-                        $data = \array_merge_recursive(
-                            $data,
-                            \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
-                        );
-                    } catch (RuntimeException | JsonException $exception) {
-                        $this->blueStyle->errorMessage($exception->getMessage());
-                    }
-                });
-
-                $first->on('exit', static function ($code) use ($counter, $self) {
-                    $self->blueStyle->infoMessage("Process <options=bold>$counter</> exited with code <info>$code</>");
-                });
-            }
+            $this->createProcesses($processArrays, $dir, $loop, $data, $hashFiles);
 
             $loop->run();
         } else {
@@ -245,6 +218,55 @@ class DuplicatedFilesTool extends Command
             'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
         );
         $this->blueStyle->newLine();
+    }
+
+    /**
+     * @param array $processArrays
+     * @param string $dir
+     * @param LoopInterface $loop
+     * @param array $data
+     * @param array $hashFiles
+     * @return void
+     */
+    protected function createProcesses(
+        array $processArrays,
+        string $dir,
+        LoopInterface $loop,
+        array &$data,
+        array &$hashFiles
+    ): void {
+        $counter = 0;
+
+        foreach ($processArrays as $processArray) {
+            $counter++;
+            $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
+
+            $uuid = $this->getUuid();
+            $path = "$dir/../../../var/tmp/dup/$uuid.json";
+            $hashFiles[] = $path;
+            \file_put_contents($path, $hashes);
+
+            $first = new Process("php $dir/Duplicated/Hash.php $path");
+            $first->start($loop);
+            $self = $this;
+
+            $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
+                //check $chunk is there some error message
+
+                try {
+                    $data = \array_merge_recursive(
+                        $data,
+                        \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
+                    );
+                } catch (RuntimeException | JsonException $exception) {
+                    $this->blueStyle->errorMessage($exception->getMessage());
+                }
+            });
+
+            $first->on('exit', static function ($code) use ($counter, $self) {
+                $self->blueStyle->infoMessage("Process <options=bold>$counter</> exited with code <info>$code</>");
+            });
+        }
     }
 
     /**
