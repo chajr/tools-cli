@@ -12,7 +12,6 @@ class NoInteractive implements Strategy
      */
     protected $blueStyle;
 
-    protected $duplicatedFiles = 0;
     protected $duplicatedFilesSize = 0;
 
     /**
@@ -32,7 +31,6 @@ class NoInteractive implements Strategy
         $this->blueStyle->writeln('Duplications:');
 
         foreach ($hash as $file) {
-            $this->duplicatedFiles++;
             $size = filesize($file);
             $this->duplicatedFilesSize += $size;
 
@@ -52,7 +50,6 @@ class NoInteractive implements Strategy
     public function returnCounters() : array
     {
         return [
-            $this->duplicatedFiles,
             $this->duplicatedFilesSize,
             0,
             0,

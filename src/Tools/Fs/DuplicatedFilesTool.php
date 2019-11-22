@@ -240,14 +240,18 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->infoMessage('Compare files.');
         $this->duplicationCheckStrategy($data);
 
-//        if ($input->getOption('interactive')) {
-//            $this->blueStyle->infoMessage('Deleted files: ' . $this->deleteCounter);
-//            $this->blueStyle->infoMessage('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
-//            $this->blueStyle->newLine();
-//        }
+        if ($input->getOption('interactive')) {
+            $this->blueStyle->infoMessage('Deleted files: <info>' . $this->deleteCounter . '</>');
+            $this->blueStyle->infoMessage(
+                'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
+            );
+            $this->blueStyle->newLine();
+        }
 
-        $this->blueStyle->infoMessage('Duplicated files: ' . $this->duplicatedFiles);
-        $this->blueStyle->infoMessage('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
+        $this->blueStyle->infoMessage('Duplicated files: <info>' . $this->duplicatedFiles . '</>');
+        $this->blueStyle->infoMessage(
+            'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
+        );
         $this->blueStyle->newLine();
     }
 
@@ -292,13 +296,45 @@ class DuplicatedFilesTool extends Command
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
 
+        $duplications = $this->duplicationsInfo($hashes);
+        $left = $duplications;
+
         foreach ($hashes as $hash) {
             if (\count($hash) > 1) {
-                  $strategy->checkByHash($hash);
+                $strategy->checkByHash($hash);
+                $left--;
+
+                if ($left === 0) {
+                    break;
+                }
+
+                $this->blueStyle->newLine();
+                $this->blueStyle->infoMessage("Duplication <options=bold>$left</> of <info>$duplications</>");
             }
         }
 
-        [$this->duplicatedFiles, $this->duplicatedFilesSize, $this->deleteCounter, $this->deleteSizeCounter]
-            = $strategy->returnCounters();
+        [$this->duplicatedFilesSize, $this->deleteCounter, $this->deleteSizeCounter] = $strategy->returnCounters();
+    }
+
+    /**
+     * @param array $hashes
+     * @return int
+     * @throws \Exception
+     */
+    protected function duplicationsInfo(array $hashes): int
+    {
+        $duplications = 0;
+
+        foreach ($hashes as $hash) {
+            if (\count($hash) > 1) {
+                $duplications++;
+                $this->duplicatedFiles += \count($hash);
+            }
+        }
+
+        $this->blueStyle->infoMessage("Duplicated files: <info>$this->duplicatedFiles</>");
+        $this->blueStyle->infoMessage("Duplications: <info>$duplications</>");
+
+        return $duplications;
     }
 }

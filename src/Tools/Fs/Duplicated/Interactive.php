@@ -37,9 +37,6 @@ class Interactive implements Strategy
     {
         $this->blueStyle = $dft->getBlueStyle();
         $this->multiselect = (new MultiSelect($this->blueStyle))->toggleShowInfo(false);
-
-        $this->blueStyle->infoMessage('Deleted files: ' . $this->deleteCounter);
-        $this->blueStyle->infoMessage('Deleted files size: ' . Formats::dataSize($this->deleteSizeCounter));
     }
 
     /**
@@ -49,7 +46,6 @@ class Interactive implements Strategy
      */
     public function checkByHash(array $hash) : Strategy
     {
-        $this->duplicationsInfo($hash);
         $this->blueStyle->newLine(2);
 
         $this->interactive($hash, $this->multiselect);
@@ -65,7 +61,6 @@ class Interactive implements Strategy
     public function returnCounters() : array
     {
         return [
-            $this->duplicatedFiles,
             $this->duplicatedFilesSize,
             $this->deleteCounter,
             $this->deleteSizeCounter,
@@ -83,7 +78,6 @@ class Interactive implements Strategy
         $hashWithSize = [];
 
         foreach ($hash as $file) {
-            $this->duplicatedFiles++;
             $size = filesize($file);
             $this->duplicatedFilesSize += $size;
 
@@ -99,17 +93,6 @@ class Interactive implements Strategy
         }
 
         return $this;
-    }
-
-    /**
-     * @param array $hash
-     * @throws \Exception
-     */
-    protected function duplicationsInfo(array $hash): void
-    {
-        $duplications = \count($hash);
-
-        $this->blueStyle->infoMessage("Duplications: <info>$duplications</>");
     }
 
     /**
