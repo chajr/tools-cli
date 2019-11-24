@@ -21,6 +21,7 @@ use BlueRegister\{
     Register, RegisterException
 };
 use BlueConsole\Style;
+use ToolsCli\Tools\Fs\Duplicated\Interactive;
 use ToolsCli\Tools\Fs\Duplicated\Name;
 use React\{
     EventLoop\Factory,
@@ -32,6 +33,8 @@ use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 
 class DuplicatedFilesTool extends Command
 {
+    public const TMP_DUMP_DIR = __DIR__ . '/../../../var/tmp/dup/';
+
     /**
      * @var Register
      */
@@ -140,7 +143,6 @@ class DuplicatedFilesTool extends Command
         );
         
         /**
-         * @todo thread progress
          * @todo check by size first
          */
     }
@@ -157,9 +159,14 @@ class DuplicatedFilesTool extends Command
         $this->input = $input;
         $this->output = $output;
 
+        $oldDup = \glob(self::TMP_DUMP_DIR . '*.json');
+        foreach ($oldDup as $dupJson) {
+            Fs::delete($dupJson);
+        }
+
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
-            $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
+            $this->blueStyle = $this->register->factory(Style::class, [$this->input, $output, $this->formatter]);
         } catch (RegisterException $exception) {
             throw new \Exception('RegisterException: ' . $exception->getMessage());
         }
@@ -167,7 +174,7 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->title('Check file duplications');
         $this->blueStyle->infoMessage('Reading directory.');
 
-        $fileList = $this->readDirectories($input->getArgument('source'));
+        $fileList = $this->readDirectories($this->input->getArgument('source'));
         $allFiles = \count($fileList);
 
         $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
@@ -179,15 +186,14 @@ class DuplicatedFilesTool extends Command
             'names' => [],
         ];
 
-        if ($input->getOption('thread') > 0) {
-            $threads = $input->getOption('thread');
-            $chunkValue = \round(\count($fileList) / $threads);
+        if ($this->input->getOption('thread') > 0) {
+            $threads = $this->input->getOption('thread');
+            $chunkValue = \ceil(\count($fileList) / $threads);
             $processArrays = \array_chunk($fileList, $chunkValue);
 
             $loop = Factory::create();
-            $dir = __DIR__;
 
-            $this->createProcesses($processArrays, $dir, $loop, $data, $hashFiles);
+            $this->createProcesses($processArrays, $loop, $data, $hashFiles);
 
             $loop->run();
         } else {
@@ -205,7 +211,7 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->infoMessage('Compare files.');
         $this->duplicationCheckStrategy($data);
 
-        if ($input->getOption('interactive')) {
+        if ($this->input->getOption('interactive')) {
             $this->blueStyle->infoMessage('Deleted files: <info>' . $this->deleteCounter . '</>');
             $this->blueStyle->infoMessage(
                 'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
@@ -222,7 +228,6 @@ class DuplicatedFilesTool extends Command
 
     /**
      * @param array $processArrays
-     * @param string $dir
      * @param LoopInterface $loop
      * @param array $data
      * @param array $hashFiles
@@ -230,40 +235,58 @@ class DuplicatedFilesTool extends Command
      */
     protected function createProcesses(
         array $processArrays,
-        string $dir,
         LoopInterface $loop,
         array &$data,
         array &$hashFiles
     ): void {
         $counter = 0;
+        $progressList = [];
 
-        foreach ($processArrays as $processArray) {
+        foreach ($processArrays as $k => $processArray) {
             $counter++;
             $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
 
             $uuid = $this->getUuid();
-            $path = "$dir/../../../var/tmp/dup/$uuid.json";
+            $path = self::TMP_DUMP_DIR . "$uuid.json";
             $hashFiles[] = $path;
             \file_put_contents($path, $hashes);
 
+            $dir = __DIR__;
             $first = new Process("php $dir/Duplicated/Hash.php $path");
             $first->start($loop);
             $self = $this;
 
-            $first->stdout->on('data', static function ($chunk) use (&$data, $path) {
-                //check $chunk is there some error message
+            $first->stdout->on('data', static function ($chunk) use ($k, &$progressList, $self) {
+                $response = \json_decode($chunk, true);
+                if ($response && isset($response['status']['all'], $response['status']['left'])) {
+                    $progressList[$k] = $k . ' - ' . $response['status']['all'] . '/' . $response['status']['left'];
 
-                try {
-                    $data = \array_merge_recursive(
-                        $data,
-                        \json_decode(\file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)
-                    );
-                } catch (RuntimeException | JsonException $exception) {
-                    $this->blueStyle->errorMessage($exception->getMessage());
+                    for ($i = 0; $i < $self->input->getOption('thread'); $i++) {
+                        if ($i > 0) {
+                            echo "\n";
+                        }
+                        echo "\r";
+                        echo $progressList[$i] ?? '';
+                    }
+
+                    for ($i = 0; $i < $self->input->getOption('thread') -1; $i++) {
+                        echo Interactive::MOD_LINE_CHAR;
+                    }
                 }
             });
 
-            $first->on('exit', static function ($code) use ($counter, $self) {
+            $first->on('exit', static function ($code) use (&$data, $path, $counter, $self) {
+                try {
+                    $data = \array_merge_recursive(
+                        $data,
+                        \json_decode(\trim(\file_get_contents($path)), true, 512, JSON_THROW_ON_ERROR)
+                    );
+                } catch (\Throwable $exception) {
+                    $self->blueStyle->errorMessage(
+                        "{$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}"
+                    );
+                }
+                echo "\r";
                 $self->blueStyle->infoMessage("Process <options=bold>$counter</> exited with code <info>$code</>");
             });
         }
