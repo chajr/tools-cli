@@ -141,10 +141,13 @@ class DuplicatedFilesTool extends Command
             'Set number of threads used to calculate hash',
             0
         );
-        
-        /**
-         * @todo check by size first
-         */
+
+        $this->addOption(
+            'size',
+            'S',
+            null,
+            'First check files by size, before run hashing. Make checking faster.'
+        );
     }
 
     /**
@@ -181,10 +184,28 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->infoMessage('Building file hash list.');
 
         $hashFiles = [];
+        $fileListBySize = [];
         $data = [
             'hashes' => [],
             'names' => [],
         ];
+
+        if ($this->input->getOption('size')) {
+            foreach ($fileList as $file) {
+                $fileInfo = new \SplFileInfo($file);
+                $fileListBySize[$fileInfo->getSize()][] = $file;
+            }
+
+            $fileList = [];
+
+            foreach ($fileListBySize as $filesBySize) {
+                if (\count($filesBySize) > 1) {
+                    foreach ($filesBySize as $fileBySize) {
+                        $fileList[] = $fileBySize;
+                    }
+                }
+            }
+        }
 
         if ($this->input->getOption('thread') > 0) {
             $threads = $this->input->getOption('thread');

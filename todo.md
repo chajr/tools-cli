@@ -25,12 +25,13 @@
 
 ### DuplicatedFiles
 - [ ] progress bar, skip dir, create link after delete original file, inverse selection, show hash
-- [ ] first check by file size
-- [ ] multithread (calculate hashes in separate threads, compare in separate (full list and slitted list)
+- [ ] file patterns to check
+- [x] first check by file size
+- [x] multithread (calculate hashes in separate threads, compare in separate (full list and slitted list)
 - [ ] interactive delete list after comparision process
-- [ ] set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
-- [ ] set file path & size in array, size as index, if index exists calculate hashes and add files into array
-- [ ] in second iteration check hashes and skip single files
+- [x] set file in array with size, if file with the same size is detected, then calculate hash of that files and check hash
+- [x] set file path & size in array, size as index, if index exists calculate hashes and add files into array
+- [x] in second iteration check hashes and skip single files
 
 ### IfExists
 - [ ] finish implementation
