@@ -216,7 +216,7 @@ class DuplicatedFilesTool extends Command
             $this->blueStyle->infoMessage(
                 'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
             );
-            $this->blueStyle->newLine();
+            $this->blueStyle->newLine(2);
         }
 
         $this->blueStyle->infoMessage('Duplicated files: <info>' . $this->duplicatedFiles . '</>');
@@ -239,11 +239,10 @@ class DuplicatedFilesTool extends Command
         array &$data,
         array &$hashFiles
     ): void {
-        $counter = 0;
         $progressList = [];
+        $counter = $this->input->getOption('thread');
 
-        foreach ($processArrays as $k => $processArray) {
-            $counter++;
+        foreach ($processArrays as $thread => $processArray) {
             $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
 
             $uuid = $this->getUuid();
@@ -256,18 +255,13 @@ class DuplicatedFilesTool extends Command
             $first->start($loop);
             $self = $this;
 
-            $first->stdout->on('data', static function ($chunk) use ($k, &$progressList, $self) {
+            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self) {
                 $response = \json_decode($chunk, true);
                 if ($response && isset($response['status']['all'], $response['status']['left'])) {
-                    $progressList[$k] = $k . ' - ' . $response['status']['all'] . '/' . $response['status']['left'];
+                    $status = $response['status'];
+                    $progressList[$thread] = "Thread $thread - {$status['all']}/{$status['left']}";
 
-                    for ($i = 0; $i < $self->input->getOption('thread'); $i++) {
-                        if ($i > 0) {
-                            echo "\n";
-                        }
-                        echo "\r";
-                        echo $progressList[$i] ?? '';
-                    }
+                    $self->renderThreadInfo($progressList);
 
                     for ($i = 0; $i < $self->input->getOption('thread') -1; $i++) {
                         echo Interactive::MOD_LINE_CHAR;
@@ -275,20 +269,51 @@ class DuplicatedFilesTool extends Command
                 }
             });
 
-            $first->on('exit', static function ($code) use (&$data, $path, $counter, $self) {
+            $first->on('exit', static function ($code) use (&$data, $path, &$counter, $self, &$progressList, $thread) {
+                $counter--;
+
                 try {
                     $data = \array_merge_recursive(
                         $data,
                         \json_decode(\trim(\file_get_contents($path)), true, 512, JSON_THROW_ON_ERROR)
                     );
                 } catch (\Throwable $exception) {
-                    $self->blueStyle->errorMessage(
-                        "{$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}"
-                    );
+                    $progressList[$thread] =
+                        "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
                 }
-                echo "\r";
-                $self->blueStyle->infoMessage("Process <options=bold>$counter</> exited with code <info>$code</>");
+
+                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
+
+                if ($counter === 0) {
+                    $self->renderThreadInfo($progressList);
+
+                    $self->blueStyle->newLine();
+                }
             });
+        }
+    }
+
+    /**
+     * @param array $progressList
+     * @throws \Exception
+     */
+    protected function renderThreadInfo(array $progressList): void
+    {
+        for ($i = 0; $i < $this->input->getOption('thread'); $i++) {
+            if ($i > 0) {
+                echo "\n";
+            }
+
+            $message = $progressList[$i] ?? '';
+            echo "\r";
+
+            if (strpos($message, 'Error') === 0) {
+                $this->blueStyle->errorMessage($message);
+            } else {
+                $this->blueStyle->infoMessage($message);
+            }
+
+            echo Interactive::MOD_LINE_CHAR;
         }
     }
 
