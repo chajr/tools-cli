@@ -179,16 +179,73 @@ class DuplicatedFilesTool extends Command
 
         $fileList = $this->readDirectories($this->input->getArgument('source'));
         $allFiles = \count($fileList);
-
-        $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
-        $this->blueStyle->infoMessage('Building file hash list.');
-
-        $hashFiles = [];
-        $fileListBySize = [];
         $data = [
             'hashes' => [],
             'names' => [],
         ];
+
+        $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
+        $this->blueStyle->infoMessage('Building file hash list.');
+
+        $fileList = $this->checkBySize($fileList);
+
+        if ($this->input->getOption('thread') > 0) {
+            $data = $this->useThreads($fileList, $data);
+        } else {
+            $data = $this->useSingleProcess($fileList, $data);
+        }
+
+        $this->blueStyle->infoMessage('Compare files.                  ');
+        $this->duplicationCheckStrategy($data);
+
+        if ($this->input->getOption('interactive')) {
+            $this->blueStyle->infoMessage('Deleted files: <info>' . $this->deleteCounter . '</>');
+            $this->blueStyle->infoMessage(
+                'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
+            );
+            $this->blueStyle->newLine(2);
+        }
+
+        $this->blueStyle->infoMessage('Duplicated files: <info>' . $this->duplicatedFiles . '</>');
+        $this->blueStyle->infoMessage(
+            'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
+        );
+        $this->blueStyle->newLine();
+    }
+
+    /**
+     * @param array $fileList
+     * @param array $data
+     * @return array
+     */
+    protected function useThreads(array $fileList, array $data): array
+    {
+        $hashFiles = [];
+        $threads = $this->input->getOption('thread');
+        $chunkValue = \ceil(\count($fileList) / $threads);
+        $processArrays = \array_chunk($fileList, $chunkValue);
+
+        $loop = Factory::create();
+
+        $this->createProcesses($processArrays, $loop, $data, $hashFiles);
+
+        $loop->run();
+
+        foreach ($hashFiles as $hasFile) {
+            Fs::delete($hasFile);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array $fileList
+     * @return array
+     * @throws \Exception
+     */
+    protected function checkBySize(array $fileList): array
+    {
+        $fileListBySize = [];
 
         if ($this->input->getOption('size')) {
             foreach ($fileList as $file) {
@@ -208,48 +265,54 @@ class DuplicatedFilesTool extends Command
 
             if ($fileList === []) {
                 $this->blueStyle->warningMessage('Files with the same file size not found. No duplications.');
-                return;
+                return [];
             }
         }
 
-        if ($this->input->getOption('thread') > 0) {
-            $threads = $this->input->getOption('thread');
-            $chunkValue = \ceil(\count($fileList) / $threads);
-            $processArrays = \array_chunk($fileList, $chunkValue);
+        return $fileList;
+    }
 
-            $loop = Factory::create();
+    /**
+     * @param array $fileList
+     * @param array $data
+     * @return array
+     * @throws \Exception
+     */
+    protected function useSingleProcess(array $fileList, array $data): array
+    {
+        try {
+            $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
+        } catch (RegisterException $exception) {
+            throw new \Exception('RegisterException: ' . $exception->getMessage());
+        }
 
-            $this->createProcesses($processArrays, $loop, $data, $hashFiles);
+        $progressBar->start(\count($fileList));
 
-            $loop->run();
+        foreach ($fileList as $file) {
+            $progressBar->advance();
 
-            foreach ($hashFiles as $hasFile) {
-                Fs::delete($hasFile);
+            if ($this->input->getOption('progress-info')) {
+                $progressBar->setMessage($file);
             }
-        } else {
-            $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
 
-            $this->progressBar->setFormat(
-                $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
-            );
+            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
+                continue;
+            }
+
+            if ($this->input->getOption('check-by-name')) {
+                $fileInfo = new \SplFileInfo($file);
+                $name = $fileInfo->getFilename();
+                $data['names'] = $name;
+            } else {
+                $hash = hash_file('sha3-256', $file);
+                $data['hashes'][$hash][] = $file;
+            }
         }
 
-        $this->blueStyle->infoMessage('Compare files.');
-        $this->duplicationCheckStrategy($data);
+        $progressBar->finish();
+        echo "\r";
 
-        if ($this->input->getOption('interactive')) {
-            $this->blueStyle->infoMessage('Deleted files: <info>' . $this->deleteCounter . '</>');
-            $this->blueStyle->infoMessage(
-                'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
-            );
-            $this->blueStyle->newLine(2);
-        }
-
-        $this->blueStyle->infoMessage('Duplicated files: <info>' . $this->duplicatedFiles . '</>');
-        $this->blueStyle->infoMessage(
-            'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
-        );
-        $this->blueStyle->newLine();
+        return $data;
     }
 
     /**
