@@ -205,6 +205,11 @@ class DuplicatedFilesTool extends Command
                     }
                 }
             }
+
+            if ($fileList === []) {
+                $this->blueStyle->warningMessage('Files with the same file size not found. No duplications.');
+                return;
+            }
         }
 
         if ($this->input->getOption('thread') > 0) {
@@ -217,16 +222,16 @@ class DuplicatedFilesTool extends Command
             $this->createProcesses($processArrays, $loop, $data, $hashFiles);
 
             $loop->run();
+
+            foreach ($hashFiles as $hasFile) {
+                Fs::delete($hasFile);
+            }
         } else {
             $this->progressBar = $this->register->factory(ProgressBar::class, [$output]);
 
             $this->progressBar->setFormat(
                 $this->messageFormat . ($this->input->getOption('progress-info') ? '%message%' : '')
             );
-        }
-
-        foreach ($hashFiles as $hasFile) {
-            Fs::delete($hasFile);
         }
 
         $this->blueStyle->infoMessage('Compare files.');
