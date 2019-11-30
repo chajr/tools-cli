@@ -76,8 +76,6 @@ class CleanerTool extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
-        $this->readConfig();
-
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$input, $output, $this->formatter]);
