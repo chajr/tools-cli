@@ -223,12 +223,14 @@ class DuplicatedFilesTool extends Command
         $hashFiles = [];
         $threads = $this->input->getOption('thread');
         $chunkValue = \ceil(\count($fileList) / $threads);
-        $processArrays = \array_chunk($fileList, $chunkValue);
+
+        if ($chunkValue > 0) {
+            $fileList = \array_chunk($fileList, $chunkValue);
+        }
 
         $loop = Factory::create();
 
-        $this->createProcesses($processArrays, $loop, $data, $hashFiles);
-
+        $this->createProcesses($fileList, $loop, $data, $hashFiles);
         $loop->run();
 
         foreach ($hashFiles as $hasFile) {
