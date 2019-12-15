@@ -110,7 +110,7 @@ class CleanerTool extends Command
         } catch (RegisterException $exception) {
             throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         } catch (\Throwable $exception) {
-            dump($exception);
+            $this->blueStyle->errorMessage($exception->getMessage());
         }
     }
 
