@@ -195,7 +195,7 @@ class DuplicatedFilesTool extends Command
             $data = $this->useSingleProcess($fileList, $data);
         }
 
-        $this->blueStyle->infoMessage('Compare files.                  ');
+        $this->blueStyle->infoMessage('Compare files.');
         $this->duplicationCheckStrategy($data);
 
         if ($this->input->getOption('interactive')) {
@@ -364,6 +364,8 @@ class DuplicatedFilesTool extends Command
                 $counter--;
 
                 try {
+
+                    //php pipe
                     $data = \array_merge_recursive(
                         $data,
                         \json_decode(\trim(\file_get_contents($path)), true, 512, JSON_THROW_ON_ERROR)
@@ -496,14 +498,18 @@ class DuplicatedFilesTool extends Command
      * @return int
      * @throws \Exception
      */
-    protected function duplicationsInfo(array $hashes): int
+    protected function duplicationsInfo(array &$hashes): int
     {
         $duplications = 0;
 
-        foreach ($hashes as $hash) {
+        foreach ($hashes as $index => $hash) {
+            $hash = \array_unique($hash);
+
             if (\count($hash) > 1) {
                 $duplications++;
                 $this->duplicatedFiles += \count($hash);
+            } else {
+                unset($hashes[$index]);
             }
         }
 
