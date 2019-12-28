@@ -30,11 +30,15 @@
         "bluetree-service/cache": "^0.3.0",
         "spatie/array-to-xml": "^2.9",
         "react/child-process": "^0.6.1",
-        "ramsey/uuid": "^3.8"
+        "ramsey/uuid": "^3.8",
+        "undemanding/difference": "^1.1",
+        "kosinix/grafika": "^2.0",
+        "serafim/pipe": "^0.2.0"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
-        "phpunit/phpunit": "7.0.*"
+        "phpunit/phpunit": "7.0.*",
+        "phpmetrics/phpmetrics": "^2.5"
     },
     "autoload": {
         "psr-4": {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eb56bcc480f1d5293bde7c3a401b4765",
+    "content-hash": "15b1aaf6de494a07a5432582e4647428",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -568,6 +568,7 @@
             ],
             "description": "Promoting the interoperability of container objects (DIC, SL, etc.)",
             "homepage": "https://github.com/container-interop/container-interop",
+            "abandoned": "psr/container",
             "time": "2017-02-14T19:40:03+00:00"
         },
         {
@@ -612,6 +613,47 @@
                 "event-emitter"
             ],
             "time": "2017-07-23T21:35:13+00:00"
+        },
+        {
+            "name": "kosinix/grafika",
+            "version": "2.0.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kosinix/grafika.git",
+                "reference": "211f61fc334b8b36616b23e8af7c5727971d96ee"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kosinix/grafika/zipball/211f61fc334b8b36616b23e8af7c5727971d96ee",
+                "reference": "211f61fc334b8b36616b23e8af7c5727971d96ee",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Grafika\\": "src/Grafika"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT",
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Nico Amarilla",
+                    "homepage": "https://www.kosinix.com"
+                }
+            ],
+            "description": "An image manipulation library for PHP.",
+            "homepage": "http://kosinix.github.io/grafika",
+            "keywords": [
+                "grafika"
+            ],
+            "time": "2017-06-20T03:13:49+00:00"
         },
         {
             "name": "mikehaertl/php-shellcommand",
@@ -1151,6 +1193,159 @@
             "time": "2019-01-01T16:15:09+00:00"
         },
         {
+            "name": "serafim/pipe",
+            "version": "0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SerafimArts/Pipe.git",
+                "reference": "0c8ba469050236372556f3d53ee943f3463ef82f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SerafimArts/Pipe/zipball/0c8ba469050236372556f3d53ee943f3463ef82f",
+                "reference": "0c8ba469050236372556f3d53ee943f3463ef82f",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1.3",
+                "serafim/placeholder": "~1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~7.5",
+                "symfony/console": "4.*",
+                "zendframework/zend-code": "3.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Serafim\\Pipe\\": "src/"
+                },
+                "files": [
+                    "./src/helpers.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kirill Nesmeyanov",
+                    "email": "nesk@xakep.ru"
+                }
+            ],
+            "description": "Library for implementing function call chains",
+            "homepage": "https://github.com/SerafimArts/Pipe",
+            "keywords": [
+                "curry",
+                "functional",
+                "high order",
+                "partial application",
+                "pipe"
+            ],
+            "time": "2019-07-05T15:11:44+00:00"
+        },
+        {
+            "name": "serafim/placeholder",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SerafimArts/Placeholder.git",
+                "reference": "33895e27a6a4e474b0ec9f449357a5e752e12f60"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SerafimArts/Placeholder/zipball/33895e27a6a4e474b0ec9f449357a5e752e12f60",
+                "reference": "33895e27a6a4e474b0ec9f449357a5e752e12f60",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.3",
+                "serafim/symbol": "~1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~7.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Serafim\\Placeholder\\": "src/"
+                },
+                "files": [
+                    "./src/helpers.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kirill Nesmeyanov",
+                    "email": "nesk@xakep.ru"
+                }
+            ],
+            "description": "Simple placeholder implementation for functional constructions",
+            "homepage": "https://github.com/SerafimArts/placeholder",
+            "keywords": [
+                "curry",
+                "functional",
+                "high order",
+                "partial application",
+                "placeholder"
+            ],
+            "time": "2019-07-04T19:24:23+00:00"
+        },
+        {
+            "name": "serafim/symbol",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SerafimArts/Symbol.git",
+                "reference": "fd573f0011236e5785ff2d18fd434a80b67de833"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SerafimArts/Symbol/zipball/fd573f0011236e5785ff2d18fd434a80b67de833",
+                "reference": "fd573f0011236e5785ff2d18fd434a80b67de833",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~7.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Serafim\\Symbol\\": "src/"
+                },
+                "files": [
+                    "./src/helpers.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kirill Nesmeyanov",
+                    "email": "nesk@xakep.ru"
+                }
+            ],
+            "description": "The Symbol type PHP implementation",
+            "homepage": "https://github.com/SerafimArts/Symbol",
+            "keywords": [
+                "functional",
+                "placeholder",
+                "symbol",
+                "type"
+            ],
+            "time": "2019-07-04T18:12:22+00:00"
+        },
+        {
             "name": "spatie/array-to-xml",
             "version": "2.9.0",
             "source": {
@@ -1631,6 +1826,39 @@
             "time": "2018-07-13T07:18:09+00:00"
         },
         {
+            "name": "undemanding/difference",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/undemanding/difference.git",
+                "reference": "fc6c9b48bf46388ad2f16248d8021582a2683476"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/undemanding/difference/zipball/fc6c9b48bf46388ad2f16248d8021582a2683476",
+                "reference": "fc6c9b48bf46388ad2f16248d8021582a2683476",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.6|^7.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^5.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Undemanding\\Difference\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Calculate the difference in images",
+            "time": "2016-05-15T03:33:31+00:00"
+        },
+        {
             "name": "zendframework/zend-config",
             "version": "3.1.0",
             "source": {
@@ -2093,6 +2321,58 @@
             "time": "2017-10-19T19:58:43+00:00"
         },
         {
+            "name": "nikic/php-parser",
+            "version": "v4.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nikic/PHP-Parser.git",
+                "reference": "9a9981c347c5c49d6dfe5cf826bb882b824080dc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/9a9981c347c5c49d6dfe5cf826bb882b824080dc",
+                "reference": "9a9981c347c5c49d6dfe5cf826bb882b824080dc",
+                "shasum": ""
+            },
+            "require": {
+                "ext-tokenizer": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "ircmaxell/php-yacc": "0.0.5",
+                "phpunit/phpunit": "^6.5 || ^7.0 || ^8.0"
+            },
+            "bin": [
+                "bin/php-parse"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpParser\\": "lib/PhpParser"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Nikita Popov"
+                }
+            ],
+            "description": "A PHP parser written in PHP",
+            "keywords": [
+                "parser",
+                "php"
+            ],
+            "time": "2019-11-08T13:50:10+00:00"
+        },
+        {
             "name": "phar-io/manifest",
             "version": "1.0.1",
             "source": {
@@ -2345,6 +2625,69 @@
                 }
             ],
             "time": "2017-07-14T14:27:02+00:00"
+        },
+        {
+            "name": "phpmetrics/phpmetrics",
+            "version": "v2.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpmetrics/PhpMetrics.git",
+                "reference": "2456b133664925836d2b807ed6403eb97dddb6c4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpmetrics/PhpMetrics/zipball/2456b133664925836d2b807ed6403eb97dddb6c4",
+                "reference": "2456b133664925836d2b807ed6403eb97dddb6c4",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-tokenizer": "*",
+                "nikic/php-parser": "^3|^4",
+                "php": ">=5.5"
+            },
+            "replace": {
+                "halleck45/php-metrics": "*",
+                "halleck45/phpmetrics": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8.36 || ^5.7.27 || ^6.5.14",
+                "sebastian/comparator": ">=1.2.3",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "bin": [
+                "bin/phpmetrics"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Hal\\": "./src/"
+                },
+                "files": [
+                    "./src/functions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jean-François Lépine",
+                    "email": "lepinejeanfrancois@yahoo.fr",
+                    "homepage": "http://www.lepine.pro",
+                    "role": "Copyright Holder"
+                }
+            ],
+            "description": "Static analyzer tool for PHP : Coupling, Cyclomatic complexity, Maintainability Index, Halstead's metrics... and more !",
+            "homepage": "http://www.phpmetrics.org",
+            "keywords": [
+                "analysis",
+                "qa",
+                "quality",
+                "testing"
+            ],
+            "time": "2019-12-12T08:55:05+00:00"
         },
         {
             "name": "phpspec/prophecy",
