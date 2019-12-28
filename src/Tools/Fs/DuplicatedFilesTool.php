@@ -148,6 +148,13 @@ class DuplicatedFilesTool extends Command
             null,
             'First check files by size, before run hashing. Make checking faster.'
         );
+
+        $this->addOption(
+            'min-size',
+            'm',
+            InputArgument::OPTIONAL,
+            'Set minimal size of files to be checked (in bytes)'
+        );
     }
 
     /**
@@ -187,6 +194,7 @@ class DuplicatedFilesTool extends Command
         $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
         $this->blueStyle->infoMessage('Building file hash list.');
 
+        $fileList = $this->filterBySize($fileList);
         $fileList = $this->checkBySize($fileList);
 
         if ($this->input->getOption('thread') > 0) {
@@ -268,6 +276,26 @@ class DuplicatedFilesTool extends Command
             if ($fileList === []) {
                 $this->blueStyle->warningMessage('Files with the same file size not found. No duplications.');
                 return [];
+            }
+        }
+
+        return $fileList;
+    }
+
+    /**
+     * @param array $fileList
+     * @return array
+     * @throws \Exception
+     */
+    protected function filterBySize(array $fileList): array
+    {
+        if ($this->input->getOption('min-size')) {
+            foreach ($fileList as $index => $file) {
+                $fileInfo = new \SplFileInfo($file);
+
+                if ($fileInfo->getSize() < (int)$this->input->getOption('min-size')) {
+                    unset($fileList[$index]);
+                }
             }
         }
 
