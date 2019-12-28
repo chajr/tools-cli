@@ -122,7 +122,7 @@ class DuplicatedFilesTool extends Command
 
         $this->addOption(
             'check-by-name',
-            'c',
+            'N',
             InputArgument::OPTIONAL,
             'compare files using their file names. As arg give comparision parameter'
         );
@@ -153,7 +153,14 @@ class DuplicatedFilesTool extends Command
             'min-size',
             'm',
             InputArgument::OPTIONAL,
-            'Set minimal size of files to be checked (in bytes)'
+            'Set minimal size of files to be checked (in bytes).'
+        );
+
+        $this->addOption(
+            'chunk',
+            'c',
+            InputArgument::OPTIONAL,
+            'Use only given in bytes part of file to compare. Help with very large files.'
         );
     }
 
@@ -198,9 +205,9 @@ class DuplicatedFilesTool extends Command
         $fileList = $this->checkBySize($fileList);
 
         if ($this->input->getOption('thread') > 0) {
-            $data = $this->useThreads($fileList, $data);
+            $data = $this->useThreads($fileList, $data, (int)$this->input->getOption('chunk'));
         } else {
-            $data = $this->useSingleProcess($fileList, $data);
+            $data = $this->useSingleProcess($fileList, $data, (int)$this->input->getOption('chunk'));
         }
 
         $this->blueStyle->infoMessage('Compare files.');
@@ -224,9 +231,10 @@ class DuplicatedFilesTool extends Command
     /**
      * @param array $fileList
      * @param array $data
+     * @param int $chunk
      * @return array
      */
-    protected function useThreads(array $fileList, array $data): array
+    protected function useThreads(array $fileList, array $data, int $chunk): array
     {
         $hashFiles = [];
         $threads = $this->input->getOption('thread');
@@ -238,7 +246,7 @@ class DuplicatedFilesTool extends Command
 
         $loop = Factory::create();
 
-        $this->createProcesses($fileList, $loop, $data, $hashFiles);
+        $this->createProcesses($fileList, $loop, $data, $hashFiles, $chunk);
         $loop->run();
 
         foreach ($hashFiles as $hasFile) {
@@ -305,10 +313,11 @@ class DuplicatedFilesTool extends Command
     /**
      * @param array $fileList
      * @param array $data
+     * @param int $chunk
      * @return array
      * @throws \Exception
      */
-    protected function useSingleProcess(array $fileList, array $data): array
+    protected function useSingleProcess(array $fileList, array $data, int $chunk): array
     {
         try {
             $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
@@ -325,7 +334,7 @@ class DuplicatedFilesTool extends Command
                 $progressBar->setMessage($file);
             }
 
-            if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
+            if ($this->input->getOption('skip-empty') && \filesize($file) === 0) {
                 continue;
             }
 
@@ -334,7 +343,13 @@ class DuplicatedFilesTool extends Command
                 $name = $fileInfo->getFilename();
                 $data['names'] = $name;
             } else {
-                $hash = hash_file('sha3-256', $file);
+                if ($chunk) {
+                    $content = \file_get_contents($file, false, null, 0, $chunk);
+                    $hash = hash('sha3-256', $content);
+                } else {
+                    $hash = hash_file('sha3-256', $file);
+                }
+
                 $data['hashes'][$hash][] = $file;
             }
         }
@@ -350,13 +365,15 @@ class DuplicatedFilesTool extends Command
      * @param LoopInterface $loop
      * @param array $data
      * @param array $hashFiles
+     * @param int $chunk
      * @return void
      */
     protected function createProcesses(
         array $processArrays,
         LoopInterface $loop,
         array &$data,
-        array &$hashFiles
+        array &$hashFiles,
+        int $chunk
     ): void {
         $progressList = [];
         $counter = $this->input->getOption('thread');
@@ -370,7 +387,7 @@ class DuplicatedFilesTool extends Command
             \file_put_contents($path, $hashes);
 
             $dir = __DIR__;
-            $first = new Process("php $dir/Duplicated/Hash.php $path");
+            $first = new Process("php $dir/Duplicated/Hash.php $path $chunk");
             $first->start($loop);
             $self = $this;
 

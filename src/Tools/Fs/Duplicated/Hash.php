@@ -1,6 +1,7 @@
 <?php
 
 $hasHListFile = $argv[1];
+$chunk = $argv[2];
 
 try {
     if (!file_exists($hasHListFile)) {
@@ -16,7 +17,12 @@ try {
     foreach ($fileList as $file) {
         //@todo    if ($this->input->getOption('skip-empty') && filesize($file) === 0) {
         //@todo    if ($this->input->getOption('check-by-name')) {
-        $hash = hash_file('sha3-256', $file);
+        if ($chunk) {
+            $content = file_get_contents($file, false, null, 0, $chunk);
+            $hash = hash('sha3-256', $content);
+        } else {
+            $hash = hash_file('sha3-256', $file);
+        }
 
         $hashes[$hash][] = $file;
         echo json_encode([
