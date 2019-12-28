@@ -364,12 +364,11 @@ class DuplicatedFilesTool extends Command
                 $counter--;
 
                 try {
-
-                    //php pipe
-                    $data = \array_merge_recursive(
-                        $data,
-                        \json_decode(\trim(\file_get_contents($path)), true, 512, JSON_THROW_ON_ERROR)
-                    );
+                    $dataPipe = pipe($path)
+                        ->fileGetContents
+                        ->trim
+                        ->jsonDecode(_, true, 512, JSON_THROW_ON_ERROR);
+                    $data = \array_merge_recursive($data, $dataPipe());
                 } catch (\Throwable $exception) {
                     $progressList[$thread] =
                         "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
