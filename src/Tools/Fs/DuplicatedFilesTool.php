@@ -94,6 +94,14 @@ class DuplicatedFilesTool extends Command
         return $this->blueStyle;
     }
 
+    /**
+     * @return InputInterface
+     */
+    public function getInput(): InputInterface
+    {
+        return $this->input;
+    }
+
     protected function configure(): void
     {
         $this->setName('fs:duplicated')
@@ -162,6 +170,13 @@ class DuplicatedFilesTool extends Command
             InputArgument::OPTIONAL,
             'Use only given in bytes part of file to compare. Help with very large files.'
         );
+
+        $this->addOption(
+            'list-only',
+            'l',
+            null,
+            'Show only list of duplicated files with their paths.'
+        );
     }
 
     /**
@@ -186,6 +201,10 @@ class DuplicatedFilesTool extends Command
             $this->blueStyle = $this->register->factory(Style::class, [$this->input, $output, $this->formatter]);
         } catch (RegisterException $exception) {
             throw new \DomainException('RegisterException: ' . $exception->getMessage());
+        }
+
+        if ($this->input->getOption('list-only') && $this->input->getOption('interactive')) {
+            throw new \InvalidArgumentException('Interactive & list only options are incompatible.');
         }
 
         $this->blueStyle->title('Check file duplications');
@@ -219,6 +238,10 @@ class DuplicatedFilesTool extends Command
                 'Deleted files size: <info>' . Formats::dataSize($this->deleteSizeCounter) . '</>'
             );
             $this->blueStyle->newLine(2);
+        }
+
+        if ($this->input->getOption('list-only')) {
+            $this->blueStyle->newLine();
         }
 
         $this->blueStyle->infoMessage('Duplicated files: <info>' . $this->duplicatedFiles . '</>');
@@ -566,6 +589,10 @@ class DuplicatedFilesTool extends Command
 
         $this->blueStyle->infoMessage("Duplicated files: <info>$this->duplicatedFiles</>");
         $this->blueStyle->infoMessage("Duplications: <info>$duplications</>");
+
+        if ($this->input->getOption('list-only')) {
+            $this->blueStyle->newLine();
+        }
 
         return $duplications;
     }

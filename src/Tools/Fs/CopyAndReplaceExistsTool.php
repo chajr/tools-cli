@@ -179,6 +179,7 @@ class CopyAndReplaceExistsTool extends Command
                     $this->progressBar->advance();
                 }
 
+                //progres->display()
                 if ($progressBar && $progressInfo) {
                     $this->progressBar->setMessage($file->getFilename());
                 }
