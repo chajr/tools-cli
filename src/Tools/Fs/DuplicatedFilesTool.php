@@ -185,7 +185,7 @@ class DuplicatedFilesTool extends Command
             $this->formatter = $this->register->factory(FormatterHelper::class);
             $this->blueStyle = $this->register->factory(Style::class, [$this->input, $output, $this->formatter]);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \DomainException('RegisterException: ' . $exception->getMessage());
         }
 
         $this->blueStyle->title('Check file duplications');
@@ -322,7 +322,7 @@ class DuplicatedFilesTool extends Command
         try {
             $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \DomainException('RegisterException: ' . $exception->getMessage());
         }
 
         $progressBar->start(\count($fileList));
@@ -334,6 +334,7 @@ class DuplicatedFilesTool extends Command
                 $progressBar->setMessage($file);
             }
 
+            /** @noinspection ReturnFalseInspection */
             if ($this->input->getOption('skip-empty') && \filesize($file) === 0) {
                 continue;
             }
@@ -344,6 +345,7 @@ class DuplicatedFilesTool extends Command
                 $data['names'] = $name;
             } else {
                 if ($chunk) {
+                    /** @noinspection ReturnFalseInspection */
                     $content = \file_get_contents($file, false, null, 0, $chunk);
                     $hash = hash('sha3-256', $content);
                 } else {
@@ -384,6 +386,7 @@ class DuplicatedFilesTool extends Command
             $uuid = $this->getUuid();
             $path = self::TMP_DUMP_DIR . "$uuid.json";
             $hashFiles[] = $path;
+            /** @noinspection ReturnFalseInspection */
             \file_put_contents($path, $hashes);
 
             $dir = __DIR__;
@@ -399,7 +402,7 @@ class DuplicatedFilesTool extends Command
 
                     $self->renderThreadInfo($progressList);
 
-                    for ($i = 0; $i < $self->input->getOption('thread') -1; $i++) {
+                    for ($i = 0; $i < $self->input->getOption('thread') - 1; $i++) {
                         echo Interactive::MOD_LINE_CHAR;
                     }
                 }
@@ -444,7 +447,8 @@ class DuplicatedFilesTool extends Command
             $message = $progressList[$i] ?? '';
             echo "\r";
 
-            if (strpos($message, 'Error') === 0) {
+            /** @noinspection ReturnFalseInspection */
+            if (\strpos($message, 'Error') === 0) {
                 $this->blueStyle->errorMessage($message);
             } else {
                 $this->blueStyle->infoMessage($message);
@@ -467,6 +471,7 @@ class DuplicatedFilesTool extends Command
             try {
                 /** @var Structure $structure */
                 $structure = $this->register->factory(Structure::class, [$path, true]);
+                /** @noinspection SlowArrayOperationsInLoopInspection */
                 $fileList = \array_merge($fileList, $structure->returnPaths()['file']);
             } catch (RegisterException $exception) {
                 $this->blueStyle->errorMessage('RegisterException: ' . $exception->getMessage());
@@ -494,7 +499,7 @@ class DuplicatedFilesTool extends Command
      * @param array $list
      * @throws \Exception
      */
-    protected function duplicationCheckStrategy(array $list) : void
+    protected function duplicationCheckStrategy(array $list): void
     {
         $hashes = $list['hashes'];
         $names = $list['names'];
@@ -506,7 +511,7 @@ class DuplicatedFilesTool extends Command
 
         try {
             if ($this->input->getOption('check-by-name')) {
-                /** @var \ToolsCli\Tools\Fs\Duplicated\Name $checkByName */
+                /** @var Name $checkByName */
                 $checkByName = $this->register->factory(Name::class);
                 $hashes = $checkByName->checkByName($names, $hashes, $this->input->getOption('check-by-name'));
             }
@@ -514,7 +519,7 @@ class DuplicatedFilesTool extends Command
             /** @var Strategy $strategy */
             $strategy = $this->register->factory('ToolsCli\Tools\Fs\Duplicated\\' . $name, [$this]);
         } catch (RegisterException $exception) {
-            throw new \Exception('RegisterException: ' . $exception->getMessage());
+            throw new \DomainException('RegisterException: ' . $exception->getMessage());
         }
 
         $duplications = $this->duplicationsInfo($hashes);
@@ -529,8 +534,10 @@ class DuplicatedFilesTool extends Command
                     break;
                 }
 
-                $this->blueStyle->newLine();
-                $this->blueStyle->infoMessage("Duplication <options=bold>$left</> of <info>$duplications</>");
+                if ($this->input->getOption('interactive')) {
+                    $this->blueStyle->newLine();
+                    $this->blueStyle->infoMessage("Duplication <options=bold>$left</> of <info>$duplications</>");
+                }
             }
         }
 
