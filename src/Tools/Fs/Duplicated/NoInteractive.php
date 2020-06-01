@@ -12,7 +12,15 @@ class NoInteractive implements Strategy
      */
     protected $blueStyle;
 
+    /**
+     * @var int
+     */
     protected $duplicatedFilesSize = 0;
+
+    /**
+     * @var \Symfony\Component\Console\Input\InputInterface
+     */
+    protected $input;
 
     /**
      * @param DuplicatedFilesTool $dft
@@ -20,26 +28,32 @@ class NoInteractive implements Strategy
     public function __construct(DuplicatedFilesTool $dft)
     {
         $this->blueStyle = $dft->getBlueStyle();
+        $this->input = $dft->getInput();
     }
 
     /**
      * @param array $hash
      * @return $this
      */
-    public function checkByHash(array $hash) : Strategy
+    public function checkByHash(array $hash): Strategy
     {
-        $this->blueStyle->writeln('Duplications:');
-
         foreach ($hash as $file) {
-            $size = filesize($file);
-            $this->duplicatedFilesSize += $size;
+            $size = null;
 
-            $formattedSize = Formats::dataSize($size);
-            //@todo colorize
-            $this->blueStyle->writeln("$file ($formattedSize)");
+            if (!$this->input->getOption('list-only')) {
+                /** @noinspection ReturnFalseInspection */
+                $size = \filesize($file);
+                $this->duplicatedFilesSize += $size;
+                $formattedSize = Formats::dataSize($size);
+                $size = " ($formattedSize)";
+            }
+
+            $this->blueStyle->writeln($file . $size);
         }
 
-        $this->blueStyle->newLine();
+        if (!$this->input->getOption('list-only')) {
+            $this->blueStyle->newLine();
+        }
 
         return $this;
     }
@@ -47,7 +61,7 @@ class NoInteractive implements Strategy
     /**
      * @return array
      */
-    public function returnCounters() : array
+    public function returnCounters(): array
     {
         return [
             $this->duplicatedFilesSize,
