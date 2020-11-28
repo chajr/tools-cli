@@ -314,15 +314,19 @@ class NameToDateTool extends Command
      * @param \SplFileInfo $file
      * @return int
      */
-    protected function checkFormat(\SplFileInfo $file) : int
+    protected function checkFormat(\SplFileInfo $file): int
     {
         $formats = $this->fileFormats();
 
         foreach ($formats as $format) {
             $matches = [];
 
-            if (preg_match("#{$format[0]}#", $file->getBasename(), $matches)) {
-                return $format[1]($matches[0]);
+            if ($format[1] === false) {
+                continue;
+            }
+
+            if (\preg_match("#{$format[0]}#", $file->getBasename(), $matches)) {
+                return $format[1]($matches[0], $file);
             }
         }
 
@@ -331,37 +335,59 @@ class NameToDateTool extends Command
 
     /**
      * @return array
+     * @noinspection PhpUnusedParameterInspection
      */
-    protected function fileFormats() : array
+    protected function fileFormats(): array
     {
         return [
             [
                 '^[\d]{8}_[\d]{6}',
                 function ($name) {
-                    return strtotime(
-                        str_replace('_', '', $name)
+                    return \strtotime(
+                        \str_replace('_', '', $name)
                     );
                 }
             ],
             [
                 '^(VID|IMG)-[\d]{8}-WA[\d]{4}',
                 function ($name) {
-                    $strings = explode('-', $name);
+                    $strings = \explode('-', $name);
 
-                    return strtotime(
-                        str_replace('_', '', $strings[1])
+                    return \strtotime(
+                        \str_replace('_', '', $strings[1])
                     );
                 }
             ],
             [
                 '^(Resized|IMG)_[\d]{8}_[\d]{4,6}',
                 function ($name) {
-                    $strings = explode('_', $name);
-                    $part = substr($strings[2], 0, 6);
+                    $strings = \explode('_', $name);
+                    $part = \substr($strings[2], 0, 6);
 
-                    return strtotime(
-                        str_replace('_', '', $strings[1] . $part)
+                    return \strtotime(
+                        \str_replace('_', '', $strings[1] . $part)
                     );
+                }
+            ],
+            [
+                '^Screenshot_[\d]{8}-[\d]{6}_',
+                function ($name) {
+                    $strings = \explode('_', $name);
+                    $dateTime = \explode('-', $strings[1]);
+                    $date = \date('Y-m-d', strtotime($dateTime[0]));
+                    $time = \date('H:i:s', strtotime($dateTime[1]));
+                    $newDateTime = "$date $time";
+
+                    return \strtotime($newDateTime);
+                }
+            ],
+            [
+                '^DSC_[\d]{4}',
+                function ($name, \SplFileInfo $file) {
+                    $path = $file->getPath() . DIRECTORY_SEPARATOR . $file->getBasename();
+                    $date = \shell_exec("identify -format '%[EXIF:DateTimeOriginal]' $path");
+
+                    return \strtotime($date);
                 }
             ],
         ];
