@@ -341,7 +341,7 @@ class NameToDateTool extends Command
     {
         return [
             [
-                '^[\d]{8}_[\d]{16}_[\d]{19}_[a-z]{1}',
+                '^[\d]{8}_[\d]{16}_[\d]{15,20}_[a-z]{1}',
                 function ($name, \SplFileInfo $file) {
                     return $file->getMTime();
                 }
