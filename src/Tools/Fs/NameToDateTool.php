@@ -191,10 +191,11 @@ class NameToDateTool extends Command
 
             ++$count;
 
+            $dateTime = \date($input->getOption('date-format'), $fileCreationDate);
             $this->showMessage(
                 $file->getBasename()
                 . ' -> '
-                . date($input->getOption('date-format'), $fileCreationDate)
+                . $dateTime
                 . ' - <fg=red>'
                 . $count
                 . '</> / '
@@ -202,8 +203,7 @@ class NameToDateTool extends Command
                 'success'
             );
 
-            $newName = date($input->getOption('date-format'), $fileCreationDate);
-            $newPath = $destination . '/' . $newName;
+            $newPath = $destination . '/' . $dateTime;
             $extension = $this->getExtension($file);
 
             if (\in_array($newPath, $newFiles, true)) {
@@ -341,6 +341,12 @@ class NameToDateTool extends Command
     {
         return [
             [
+                '^[\d]{8}_[\d]{16}_[\d]{19}_[a-z]{1}',
+                function ($name, \SplFileInfo $file) {
+                    return $file->getMTime();
+                }
+            ],
+            [
                 '^[\d]{8}_[\d]{6}',
                 function ($name) {
                     return \strtotime(
@@ -385,7 +391,7 @@ class NameToDateTool extends Command
                 '^DSC_[\d]{4}',
                 function ($name, \SplFileInfo $file) {
                     $path = $file->getPath() . DIRECTORY_SEPARATOR . $file->getBasename();
-                    $date = \shell_exec("identify -format '%[EXIF:DateTimeOriginal]' $path");
+                    $date = \shell_exec("identify -format '%[EXIF:DateTimeOriginal]' '$path'");
 
                     return \strtotime($date);
                 }
