@@ -13,7 +13,7 @@ use BlueCache\SimpleCache;
 
 class Commands extends Container
 {
-    public const MAIN_DIR = \__DIR__ . '/../../';
+    public const MAIN_DIR = __DIR__ . '/../../';
 
     /**
      * @var Register
