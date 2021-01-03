@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ToolsCli\Console;
 
 use Symfony\Component\Console\Command\Command;
@@ -11,27 +13,27 @@ use BlueCache\SimpleCache;
 
 class Commands extends Container
 {
-    public const MAIN_DIR = __DIR__ . '/../../';
+    public const MAIN_DIR = \__DIR__ . '/../../';
 
     /**
      * @var Register
      */
-    protected $register;
+    protected Register $register;
 
     /**
      * @var Log
      */
-    protected $log;
+//    protected Log $log;
 
     /**
      * @var Alias
      */
-    protected $alias;
+    protected Alias $alias;
 
     /**
      * @var Event
      */
-    protected $event;
+//    protected Event $event;
 
     /**
      * @var SimpleCache
@@ -57,12 +59,13 @@ class Commands extends Container
 //        $this->event = new Event([]);
 //        $this->log = new Log([]);
         } catch (RegisterException $exception) {
-            throw new \RuntimeException('Unable to register class. ' . $exception->getMessage());
+            throw new \UnexpectedValueException('Unable to register class. ' . $exception->getMessage());
         }
 
         try {
             parent::__construct(['data' => $this->readAllCommandTools()]);
         } catch (\Exception $exception) {
+            /** @noinspection ForgottenDebugOutputInspection */
             dump($exception->getMessage());
         }
 
@@ -78,7 +81,7 @@ class Commands extends Container
      * @throws \BlueCache\CacheException
      * @throws \Exception
      */
-    protected function readAllCommandTools() : array
+    protected function readAllCommandTools(): array
     {
         $list = [];
         $namespaces = [];
@@ -86,7 +89,7 @@ class Commands extends Container
         if ($this->cache->has('tools')) {
             $namespaces = $this->cache->get('tools');
         } else {
-            $namespaces['file_list'] = glob(self::MAIN_DIR . 'src/Tools/*/*Tool.php');
+            $namespaces['file_list'] = \glob(self::MAIN_DIR . 'src/Tools/*/*Tool.php');
 
             foreach ($namespaces['file_list'] as $commandFile) {
                 $namespaces['list'][$commandFile] = $this->resolveToolNamespace($commandFile);
@@ -111,22 +114,22 @@ class Commands extends Container
      * @param string $path
      * @return string
      */
-    protected function resolveToolNamespace(string $path) : string
+    protected function resolveToolNamespace(string $path): string
     {
         $gettingClass = false;
         $gettingNamespace = false;
         $namespace = '';
         $class = '';
-        $contents = file_get_contents($path);
+        $contents = \file_get_contents($path);
 
-        foreach (token_get_all($contents) as $token) {
+        foreach (\token_get_all($contents) as $token) {
             $isArray = \is_array($token);
  
-            if ($isArray && $token[0] === T_NAMESPACE) {
+            if ($isArray && $token[0] === \T_NAMESPACE) {
                 $gettingNamespace = true;
             }
 
-            if ($isArray && $token[0] === T_CLASS) {
+            if ($isArray && $token[0] === \T_CLASS) {
                 $gettingClass = true;
             }
 
@@ -152,7 +155,7 @@ class Commands extends Container
      */
     protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace, bool $isArray): string
     {
-        $tokens = [T_STRING, T_NS_SEPARATOR];
+        $tokens = [\T_STRING, \T_NS_SEPARATOR];
 
         if (\PHP_VERSION_ID >= 80000) {
             $tokens[] = T_NAME_QUALIFIED;
@@ -175,7 +178,7 @@ class Commands extends Container
      * @param bool $gettingClass
      * @return string
      */
-    protected function getClassToken(array $token, string $class, bool $gettingClass) : string
+    protected function getClassToken(array $token, string $class, bool $gettingClass): string
     {
         if ($gettingClass === true && $token[0] === T_STRING) {
             $class = $token[1];
@@ -188,7 +191,7 @@ class Commands extends Container
      * @param string $namespace
      * @return Command|null
      */
-    protected function registerCommandTool(string $namespace) : ?Command
+    protected function registerCommandTool(string $namespace): ?Command
     {
         try {
             return $this->register->factory(
@@ -196,7 +199,7 @@ class Commands extends Container
                 [$namespace, $this->alias, $this->register]
             );
         } catch (RegisterException $exception) {
-            (new ConsoleOutput)->writeln('<error>' . $exception->getMessage() . '</error>');
+            (new ConsoleOutput())->writeln('<error>' . $exception->getMessage() . '</error>');
         }
 
         return null;
