@@ -10,6 +10,8 @@ use BlueContainer\Container;
 use BlueRegister\Register;
 use BlueRegister\RegisterException;
 use BlueCache\SimpleCache;
+use UnexpectedValueException;
+use DateInterval;
 
 class Commands extends Container
 {
@@ -59,7 +61,7 @@ class Commands extends Container
 //        $this->event = new Event([]);
 //        $this->log = new Log([]);
         } catch (RegisterException $exception) {
-            throw new \UnexpectedValueException('Unable to register class. ' . $exception->getMessage());
+            throw new UnexpectedValueException('Unable to register class. ' . $exception->getMessage());
         }
 
         try {
@@ -95,7 +97,7 @@ class Commands extends Container
                 $namespaces['list'][$commandFile] = $this->resolveToolNamespace($commandFile);
             }
 
-            $this->cache->set('tools', $namespaces, new \DateInterval('P0Y0M1DT0H0M0S'));
+            $this->cache->set('tools', $namespaces, new DateInterval('P0Y0M1DT0H0M0S'));
         }
 
         foreach ($namespaces['file_list'] as $commandFile) {
