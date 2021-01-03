@@ -150,10 +150,16 @@ class Commands extends Container
      * @param bool $isArray
      * @return string
      */
-    protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace, bool $isArray) : string
+    protected function getNamespaceToken($token, string $namespace, bool &$gettingNamespace, bool $isArray): string
     {
+        $tokens = [T_STRING, T_NS_SEPARATOR];
+
+        if (\PHP_VERSION_ID >= 80000) {
+            $tokens[] = T_NAME_QUALIFIED;
+        }
+
         if ($gettingNamespace === true) {
-            if ($isArray && \in_array($token[0], [T_STRING, T_NS_SEPARATOR], true)) {
+            if ($isArray && \in_array($token[0], $tokens, true)) {
                 $namespace .= $token[1];
             } elseif ($token === ';') {
                 $gettingNamespace = false;
