@@ -365,7 +365,7 @@ class DuplicatedFilesTool extends Command
             if ($this->input->getOption('check-by-name')) {
                 $fileInfo = new \SplFileInfo($file);
                 $name = $fileInfo->getFilename();
-                $data['names'] = $name;
+                $data['names'][$fileInfo->getPath()] = $name;
             } else {
                 if ($chunk) {
                     /** @noinspection ReturnFalseInspection */
