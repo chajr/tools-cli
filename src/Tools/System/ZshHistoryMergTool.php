@@ -183,8 +183,15 @@ class ZshHistoryMergTool extends Command
     protected function buildNewHistory(array $stamp, string $history, int $key): string
     {
         $nextNoStamp = false;
+        $previous = '';
 
         foreach ($stamp as $line) {
+            if ($previous !== '' && $previous === $line) {
+                continue;
+            }
+
+            $previous = $line;
+
             if (\preg_match("#\\\\$#", $line)) {
                 $history = $this->generateLine($history, $line, $key, $nextNoStamp);
                 $nextNoStamp = true;
