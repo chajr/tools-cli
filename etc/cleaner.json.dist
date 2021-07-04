@@ -1,6 +1,7 @@
 {
     "list": [
         {
+            "name": "Rule name to be displayed",
             "path": "directory to check",
             "action": "move|delete|custom:namespace",
             "rules": {

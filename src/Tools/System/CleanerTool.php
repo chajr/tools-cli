@@ -16,6 +16,7 @@ use ToolsCli\Console\{
     Alias,
 };
 use BlueConsole\Style;
+use DateTime;
 
 class CleanerTool extends Command
 {
@@ -52,7 +53,7 @@ class CleanerTool extends Command
         parent::__construct($name, $alias);
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this->setName('system:cleaner')
             ->setDescription('')
@@ -72,11 +73,11 @@ class CleanerTool extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return int|null|void
+     * @return int
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -85,12 +86,19 @@ class CleanerTool extends Command
             throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         }
 
-        $message = 'Execution time: ' . (new \DateTime)->format('c');
+        $message = 'Execution time: ' . (new DateTime())->format('c');
         $this->blueStyle->infoMessage($message);
 
         foreach ($this->cleanerConfig as $config) {
+            $this->blueStyle->infoMessage(
+                '<options=bold>'  . $config['name']
+                . '</>, path: <fg=yellow>' . $config['path']
+                . '</>, action: <fg=green>' . $config['action'] . '</>'
+            );
             $this->executeAction($config);
         }
+
+        return 0;
     }
 
     /**
@@ -124,7 +132,7 @@ class CleanerTool extends Command
         if (\preg_match('/^custom:[a-zA-Z0-9\\\]+/', $config['action'])) {
             $actionClass = \str_replace('custom:', '', $config['action']);
         } else {
-            $actionClass = 'ToolsCli\Tools\System\CleanerAction\\' . \strtoupper($config['action']);
+            $actionClass = 'ToolsCli\Tools\System\CleanerAction\\' . \ucfirst($config['action']);
         }
 
         /** @var \ToolsCli\Tools\System\CleanerAction\Action $action */
