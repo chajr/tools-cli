@@ -92,7 +92,16 @@ class WorkspaceFixTool extends Command
             throw new \InvalidArgumentException("Workspace file $path is missing.");
         }
 
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage('Read file.');
+        }
+
         $data = \file_get_contents($path);
+
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage('Process config file.');
+        }
+
         $loadedXml = \simplexml_load_string($data);
         $jsonXml = \json_encode($loadedXml);
         $jsonData = \json_decode($jsonXml, true);
@@ -100,8 +109,15 @@ class WorkspaceFixTool extends Command
         $comment = null;
         $index = 0;
 
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage('Search for broken component.');
+        }
+
         foreach ($jsonData['component'] as $index => $element) {
-            if ($element['@attributes']['name'] === 'ChangeListManager') {
+            if (
+                isset($element['@attributes']['name'])
+                && $element['@attributes']['name'] === 'ChangeListManager'
+            ) {
                 $comment = $element['list']['@attributes']['comment'] ?? '';
                 break;
             }
@@ -119,7 +135,15 @@ class WorkspaceFixTool extends Command
             return;
         }
 
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage('Fixing broken component.');
+        }
+
         $jsonData['component'][$index]['list']['@attributes']['comment'] = '';
+
+        if ($output->isVerbose()) {
+            $this->blueStyle->infoMessage('Save config file.');
+        }
 
         $this->convertAndSave($jsonData, $path, $output->isVerbose());
     }
