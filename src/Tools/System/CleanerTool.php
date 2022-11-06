@@ -90,29 +90,47 @@ class CleanerTool extends Command
         $this->blueStyle->infoMessage($message);
 
         foreach ($this->cleanerConfig as $config) {
-            $this->blueStyle->infoMessage(
-                '<options=bold>'  . $config['name']
-                . '</>, path: <fg=yellow>' . $config['path']
-                . '</>, action: <fg=green>' . $config['action'] . '</>'
-            );
-            $this->executeAction($config);
+            if (\is_array($config['path'])) {
+                foreach ($config['path'] as $path) {
+                    $this->processPath($path, $config);
+                }
+            } else {
+                $this->processPath($config['path'], $config);
+            }
         }
 
         return 0;
     }
 
     /**
+     * @param string $path
+     * @param array $config
+     * @return void
+     * @throws \Exception
+     */
+    protected function processPath(string $path, array $config): void
+    {
+        $this->blueStyle->infoMessage(
+            '<options=bold>'  . $config['name']
+            . '</>, path: <fg=yellow>' . $path
+            . '</>, action: <fg=green>' . $config['action'] . '</>'
+        );
+        $this->executeAction($path, $config);
+    }
+
+    /**
+     * @param string $path
      * @param array $config
      * @throws \Exception
      */
-    protected function executeAction(array $config): void
+    protected function executeAction(string $path, array $config): void
     {
         try {
             $callback = $this->processElementFunction($config);
 
             $recursive = $config['params']['recursive'] ?? false;
 
-            $structure = $this->register->factory(Structure::class, [$config['path'], $recursive]);
+            $structure = $this->register->factory(Structure::class, [$path, $recursive]);
             $structure->getReadDirectory();
             $structure->processSplObjects($callback);
         } catch (RegisterException $exception) {

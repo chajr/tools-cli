@@ -17,6 +17,8 @@ class HistoryTool extends Command
     public const DATE_FORMAT = 'Y-m-d';
 
     protected bool $previousLineRendered = false;
+    protected ?string $previousLine = null;
+    protected array $unique = [];
 
     protected function configure(): void
     {
@@ -24,9 +26,10 @@ class HistoryTool extends Command
             ->setDescription('Show zsh history in some specified formats.')
             ->setHelp('');
 
-        //part (commands 10-100)
         //unique + sort
         //grep with previous lines (or merge multiline)
+        //tail & head + date
+        //sort
 
         $this->addOption(
             'command-only',
@@ -69,6 +72,27 @@ class HistoryTool extends Command
             InputArgument::OPTIONAL,
             'Get history from custom file.',
         );
+
+        $this->addOption(
+            'unique',
+            'u',
+            null,
+            'Get unique commands.',
+        );
+
+        $this->addOption(
+            'sorta',
+            's',
+            null,
+            'Sort command alphabetically asc.',
+        );
+
+        $this->addOption(
+            'sortd',
+            'S',
+            null,
+            'Sort command alphabetically desc.',
+        );
     }
 
     /**
@@ -97,13 +121,13 @@ class HistoryTool extends Command
         $style = new Style($input, $output, $this);
         $errors = [];
 
-        if ($input->getOption('head')) {
+        if ($input->getOption('head') && !$input->getOption('date')) {
             $val = $input->getOption('head');
             $allCommandsLength = \strlen((string)$val);
             $rows = \array_slice($rows, 0, (int)$val);
         }
 
-        if ($input->getOption('tail')) {
+        if ($input->getOption('tail') && !$input->getOption('date')) {
             $val = (int)$input->getOption('tail');
             $index = $rowsCount - $val;
             $rows = \array_slice($rows, $index, $val);
@@ -116,8 +140,9 @@ class HistoryTool extends Command
                 $expression = \preg_split('#(:[\d]+;)#', $row, -1, PREG_SPLIT_DELIM_CAPTURE);
 
                 if ($this->previousLineRendered && \count($expression) === 1 && $expression[0] !== '') {
-                    $style->writeln(\preg_replace('#\\\\\\\$#', '\\', ($expression[0])));
+                    $style->writeln(\preg_replace('#\\\\\\\$#', '\\', $expression[0]));
                     $this->previousLineRendered = true;
+                    $this->previousLine .= ' ' . $expression[0];
                     continue;
                 }
 
@@ -158,7 +183,7 @@ class HistoryTool extends Command
                 }
 
                 if ($input->getOption('grep')) {
-                    $match = \preg_match($input->getOption('grep'), $expression, $matches);
+                    $match = \preg_match('#' . $input->getOption('grep') . '#', $expression, $matches);
 
                     if ($match) {
                         foreach ($matches as $index => $matchPart) {
@@ -182,8 +207,23 @@ class HistoryTool extends Command
                     $adds = "[<fg=blue>$lineNumber</> <info>$date</info>] ";
                 }
 
-                $style->writeln($adds . \preg_replace('#\\\\\\\$#', '\\', ($expression)));
+                if ($input->getOption('unique')) {
+                    $commandToDisplay = \hash('sha3-256', $expression);
+                    if (\in_array($commandToDisplay, $this->unique, true)) {
+                        $this->previousLineRendered = false;
+                        continue;
+                    }
+
+                    $this->unique[] = $commandToDisplay;
+                }
+
+                $style->writeln($adds . \preg_replace('#\\\\\\\$#', '\\', $expression));
                 $this->previousLineRendered = true;
+                if (\preg_match('#\\\\\\\$#', $expression)) {
+                    $this->previousLine = $expression;
+                } else {
+                    $this->previousLine = null;
+                }
             } catch (\Exception $exception) {
                 $errors[$lineCount] = $exception;
             } finally {
