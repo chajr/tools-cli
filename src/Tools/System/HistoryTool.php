@@ -30,6 +30,7 @@ class HistoryTool extends Command
         //grep with previous lines (or merge multiline)
         //tail & head + date
         //sort
+        //nieprawidłowe godziny [103293 2022-07-25 15:07:12] history | grep coca       101875  2022-07-25 15:41  history | grep coca
 
         $this->addOption(
             'command-only',
@@ -201,7 +202,7 @@ class HistoryTool extends Command
 
                 $adds = '';
                 if (!$input->getOption('command-only')) {
-                    $date = \date('Y-m-d H:m:s', (int)$dateTime);
+                    $date = \date('Y-m-d H:i:s', (int)$dateTime);
                     $lineNumber = $this->formatLineCounter((string)$lineCount, $allCommandsLength);
 
                     $adds = "[<fg=blue>$lineNumber</> <info>$date</info>] ";
