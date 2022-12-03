@@ -113,6 +113,13 @@ class SimilarImagesTool extends Command
             'Set comparator level, from 0-100 (0 means identical images).',
             10
         );
+
+        $this->addOption(
+            'save',
+            's',
+            null,
+            'SSave result in given file name.'
+        );
     }
 
     /**
@@ -171,6 +178,12 @@ class SimilarImagesTool extends Command
 
         $this->blueStyle->newLine();
         $this->blueStyle->infoMessage('Prepare images list.');
+
+        if (!$this->input->getOption('output')) {
+            $this->cli($data);
+        } else {
+            $this->html($data);
+        }
     }
 
     protected function useSingleProcessCompare($data)
@@ -302,6 +315,69 @@ class SimilarImagesTool extends Command
         echo "\n";
 
         return $data;
+    }
+
+    protected function toFile(): void
+    {
+        
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     */
+    protected function cli(array $data): void
+    {
+        $counter = 1;
+
+        foreach ($data as $images) {
+            $this->blueStyle->title('Group: ' . $counter++);
+            $this->blueStyle->writeln(
+                "<fg=green>Main file: {$images['main']['path']}/{$images['main']['name']}</>"
+            );
+
+            foreach ($images['founded'] as $founded) {
+                $this->blueStyle->writeln(
+                    "Level: {$founded['level']}; <fg=blue>{$founded['path']['path']}/{$founded['path']['name']}</>"
+                );
+            }
+        }
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     * @throws \Exception
+     */
+    protected function html(array $data): void
+    {
+        $renderList = '<html><body>';
+        $counter = 1;
+
+        foreach ($data as $images) {
+            $renderList .= '<div style="margin: 10px; padding: 10px; border: 1px solid black">';
+            $full = $images['main']['path'] . '/' . $images['main']['name'];
+            $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full</a><br/>";
+
+            foreach ($images['founded'] as $founded) {
+                $full = $founded['path']['path'] . '/' . $founded['path']['name'];
+                $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full - Level: {$founded['level']}</a><br/>";
+            }
+
+            $counter++;
+            $renderList .= '</div>';
+        }
+
+        $renderList .= '</body></html>';
+
+        $saved = file_put_contents('similar_images_output.html', $renderList);
+
+        if ($saved) {
+            $this->blueStyle->okMessage('File saved.');
+            return;
+        }
+
+        $this->blueStyle->errorMessage('Unable to save file.');
     }
 
     /**
