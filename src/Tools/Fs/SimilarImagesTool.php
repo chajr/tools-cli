@@ -19,6 +19,10 @@ use ToolsCli\Console\{
     Command,
     Alias,
 };
+use Ramsey\Uuid\{
+    Exception\UnsatisfiedDependencyException,
+    Uuid,
+};
 use BlueFilesystem\StaticObjects\{
     Structure,
     Fs,
@@ -32,6 +36,7 @@ use React\{
     EventLoop\LoopInterface,
 };
 use Grafika\Grafika;
+use ToolsCli\Tools\Fs\Duplicated\Interactive;
 
 class SimilarImagesTool extends Command
 {
@@ -118,7 +123,7 @@ class SimilarImagesTool extends Command
             'save',
             's',
             null,
-            'SSave result in given file name.'
+            'Save result in given file name.'
         );
     }
 
@@ -155,21 +160,16 @@ class SimilarImagesTool extends Command
 
         $this->blueStyle->infoMessage("All files to check: <info>$allFiles</>");
         $this->blueStyle->infoMessage('Building file list.');
-        
-        //jedna lista wszystkich plików
-        //dodatkowo podzielona na osobne listy (zależy od wątków)
-        //jedna lista porównywana w procesach z tymi podzielonymi listami
 
-//        if ($this->input->getOption('thread') > 0) {
-//            $data = $this->useThreads($fileList, $data, (int)$this->input->getOption('chunk'));
-//        } else {
-            $data = $this->useSingleProcess($fileList, $data);
-//        }
-
-//        dump($data);
+        $data = $this->getFilesData($fileList, $data);
 
         $this->blueStyle->infoMessage('Compare files.');
-        $data = $this->useSingleProcessCompare($data);
+
+        if ($this->input->getOption('thread') > 0) {
+            $data = $this->useThreads($data);
+        } else {
+            $data = $this->useSingleProcessCompare($data);
+        }
 
         if (empty($data)) {
             $this->blueStyle->okMessage('No similar images founded on given level.');
@@ -186,7 +186,12 @@ class SimilarImagesTool extends Command
         }
     }
 
-    protected function useSingleProcessCompare($data)
+    /**
+     * @param array $data
+     * @return array
+     * @throws \Exception
+     */
+    protected function useSingleProcessCompare(array $data): array
     {
         $editor = Grafika::createEditor(); // Create editor
         $iterations = [];
@@ -281,7 +286,7 @@ class SimilarImagesTool extends Command
      * @return array
      * @throws \Exception
      */
-    protected function useSingleProcess(array $fileList, array $data): array
+    protected function getFilesData(array $fileList, array $data): array
     {
         try {
             $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
@@ -352,7 +357,6 @@ class SimilarImagesTool extends Command
     protected function html(array $data): void
     {
         $renderList = '<html><body>';
-        $counter = 1;
 
         foreach ($data as $images) {
             $renderList .= '<div style="margin: 10px; padding: 10px; border: 1px solid black">';
@@ -364,7 +368,6 @@ class SimilarImagesTool extends Command
                 $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full - Level: {$founded['level']}</a><br/>";
             }
 
-            $counter++;
             $renderList .= '</div>';
         }
 
@@ -382,97 +385,155 @@ class SimilarImagesTool extends Command
 
     /**
      * @param array $fileList
-     * @param array $data
-     * @param int $chunk
      * @return array
      */
-    protected function useThreads(array $fileList, array $data, int $chunk): array
+    protected function useThreads(array $fileList): array
     {
-//        $hashFiles = [];
-//        $threads = $this->input->getOption('thread');
-//        $chunkValue = \ceil(\count($fileList) / $threads);
-//
-//        if ($chunkValue > 0) {
-//            $fileList = \array_chunk($fileList, $chunkValue);
-//        }
-//
-//        $loop = Factory::create();
-//
-//        $this->createProcesses($fileList, $loop, $data, $hashFiles, $chunk);
-//        $loop->run();
-//
-//        return $data;
+        $data = [];
+        $newData = [];
+        $threads = $this->input->getOption('thread');
+        $chunkValue = \ceil(\count($fileList) / $threads);
+
+        if ($chunkValue > 0) {
+            $fileListSplit = \array_chunk($fileList, (int)$chunkValue);
+        } else {
+            $fileListSplit = $fileList;
+        }
+
+        $loop = Factory::create();
+
+        $redis = new \Redis();
+        $redis->connect('127.0.0.1', 6379);
+        $uuid5 = Uuid::uuid4()->toString();
+
+        $this->createProcesses($fileList, $fileListSplit, $loop, $data, $uuid5);
+        $loop->run();
+
+        for ($i = 0; $i < count($fileListSplit); $i++) {
+            $val = $redis->hGet($uuid5, "thread-$i");
+            $newData = array_merge(unserialize($val), $newData);
+        }
+
+        $redis->del($uuid5);
+
+        return $newData;
     }
 
     /**
      * @param array $processArrays
+     * @param array $processArraysSplit
      * @param LoopInterface $loop
      * @param array $data
-     * @param array $hashFiles
-     * @param int $chunk
      * @return void
+     * @throws \JsonException
      */
     protected function createProcesses(
         array $processArrays,
+        array $processArraysSplit,
         LoopInterface $loop,
-        array &$data,
-        array &$hashFiles,
-        int $chunk
+        array &$data, 
+        string $uuid5
     ): void {
-//        $progressList = [];
-//        $counter = $this->input->getOption('thread');
-//
-//        foreach ($processArrays as $thread => $processArray) {
-//            $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-//
-//            $uuid = $this->getUuid();
-//            $path = self::TMP_DUMP_DIR . "$uuid.json";
-//            $hashFiles[] = $path;
-//            /** @noinspection ReturnFalseInspection */
-//            \file_put_contents($path, $hashes);
-//
-//            $dir = __DIR__;
-//            $first = new Process("php $dir/Duplicated/Hash.php $path $chunk");
-//            $first->start($loop);
-//            $self = $this;
-//
-//            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self) {
-//                $response = \json_decode($chunk, true);
-//                if ($response && isset($response['status']['all'], $response['status']['left'])) {
-//                    $status = $response['status'];
-//                    $progressList[$thread] = "Thread $thread - {$status['all']}/{$status['left']}";
-//
-//                    $self->renderThreadInfo($progressList);
-//
-//                    for ($i = 0; $i < $self->input->getOption('thread') - 1; $i++) {
-//                        echo Interactive::MOD_LINE_CHAR;
-//                    }
-//                }
-//            });
-//
-//            $first->on('exit', static function ($code) use (&$data, $path, &$counter, $self, &$progressList, $thread) {
-//                $counter--;
-//
-//                try {
-//                    $dataPipe = pipe($path)
-//                        ->fileGetContents
-//                        ->trim
-//                        ->jsonDecode(_, true, 512, JSON_THROW_ON_ERROR);
-//                    $data = \array_merge_recursive($data, $dataPipe());
-//                } catch (\Throwable $exception) {
-//                    $progressList[$thread] =
-//                        "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
-//                }
-//
-//                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
-//
-//                if ($counter === 0) {
-//                    $self->renderThreadInfo($progressList);
-//
-//                    $self->blueStyle->newLine();
-//                }
-//            });
-//        }
+        $progressList = [];
+        $counter = $this->input->getOption('thread');
+
+        //@todo move files into redis cache
+        $mainFileList = \json_encode($processArrays, JSON_THROW_ON_ERROR, 512);
+        $path = self::TMP_DUMP_DIR . "main.json";
+        /** @noinspection ReturnFalseInspection */
+        \file_put_contents($path, $mainFileList);
+
+        foreach ($processArraysSplit as $thread => $processArray) {
+            $fileList = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
+
+            $uuid = $this->getUuid();
+            $path = self::TMP_DUMP_DIR . "$uuid.json";
+            /** @noinspection ReturnFalseInspection */
+            \file_put_contents($path, $fileList);
+
+            $level = $this->input->getOption('level');
+            $dir = __DIR__;
+            $first = new Process("php $dir/Similar/ProcessImages.php $path $level $uuid5 $thread");
+            $first->start($loop);
+            $self = $this;
+
+            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self) {
+                $response = \json_decode($chunk, true);
+
+                if ($response && isset($response['status']['all'], $response['status']['left'])) {
+                    $status = $response['status'];
+                    $progressList[$thread] = "Thread $thread - {$status['all']}/{$status['left']}";
+
+                    $self->renderThreadInfo($progressList);
+
+                    for ($i = 0; $i < $self->input->getOption('thread') - 1; $i++) {
+                        echo Interactive::MOD_LINE_CHAR;
+                    }
+                }
+            });
+
+            $first->on('exit', static function ($code) use (&$data, $path, &$counter, $self, &$progressList, $thread) {
+                $counter--;
+
+                try {
+                    $dataPipe = pipe($path)
+                        ->fileGetContents
+                        ->trim
+                        ->jsonDecode(_, true, 512, JSON_THROW_ON_ERROR);
+                    $data = \array_merge_recursive($data, $dataPipe());
+                } catch (\Throwable $exception) {
+                    $progressList[$thread] =
+                        "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
+                }
+
+                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
+
+                if ($counter === 0) {
+                    $self->renderThreadInfo($progressList);
+
+                    $self->blueStyle->newLine();
+                }
+            });
+        }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getUuid(): string
+    {
+        try {
+            $uuid5 = Uuid::uuid4();
+
+            return $uuid5->toString();
+        } catch (\Exception | UnsatisfiedDependencyException $exception) {
+            return \hash_file('sha3-256', \microtime(true));
+        }
+    }
+
+    /**
+     * @param array $progressList
+     * @throws \Exception
+     */
+    protected function renderThreadInfo(array $progressList): void
+    {
+        for ($i = 0; $i < $this->input->getOption('thread'); $i++) {
+            if ($i > 0) {
+                echo "\n";
+            }
+
+            $message = $progressList[$i] ?? '';
+            echo "\r";
+
+            /** @noinspection ReturnFalseInspection */
+            if (\strpos($message, 'Error') === 0) {
+                $this->blueStyle->errorMessage($message);
+            } else {
+                $this->blueStyle->infoMessage($message);
+            }
+
+            echo Interactive::MOD_LINE_CHAR;
+        }
     }
 
     /**
