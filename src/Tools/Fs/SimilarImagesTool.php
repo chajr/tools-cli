@@ -404,7 +404,7 @@ class SimilarImagesTool extends Command
         $this->createProcesses($fileList, $fileListSplit, $loop, $uuid5);
         $loop->run();
 
-        $count = \count($fileListSplit)
+        $count = \count($fileListSplit);
 
         for ($i = 0; $i < $count; $i++) {
             $val = $redis->hGet($uuid5, "thread-$i");
