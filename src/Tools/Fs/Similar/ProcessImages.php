@@ -2,7 +2,7 @@
 
 ini_set('error_reporting', E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 
-require_once '../../../../vendor/autoload.php';
+require_once __DIR__ . '/../../../../vendor/autoload.php';
 
 use Grafika\Grafika;
 
@@ -89,6 +89,12 @@ try {
 
 
         if (empty($founded)) {
+            echo json_encode([
+                'status'  => [
+                    'all' => $count,
+                    'left' => $done++
+                ],
+            ], JSON_THROW_ON_ERROR, 512);
             continue;
         }
 

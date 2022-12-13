@@ -193,7 +193,7 @@ class SimilarImagesTool extends Command
      */
     protected function useSingleProcessCompare(array $data): array
     {
-        $editor = Grafika::createEditor(); // Create editor
+        $editor = Grafika::createEditor();
         $iterations = [];
         $checked = [];
 
@@ -322,11 +322,6 @@ class SimilarImagesTool extends Command
         return $data;
     }
 
-    protected function toFile(): void
-    {
-        
-    }
-
     /**
      * @param array $data
      * @return void
@@ -386,10 +381,10 @@ class SimilarImagesTool extends Command
     /**
      * @param array $fileList
      * @return array
+     * @throws \JsonException
      */
     protected function useThreads(array $fileList): array
     {
-        $data = [];
         $newData = [];
         $threads = $this->input->getOption('thread');
         $chunkValue = \ceil(\count($fileList) / $threads);
@@ -406,12 +401,14 @@ class SimilarImagesTool extends Command
         $redis->connect('127.0.0.1', 6379);
         $uuid5 = Uuid::uuid4()->toString();
 
-        $this->createProcesses($fileList, $fileListSplit, $loop, $data, $uuid5);
+        $this->createProcesses($fileList, $fileListSplit, $loop, $uuid5);
         $loop->run();
 
-        for ($i = 0; $i < count($fileListSplit); $i++) {
+        $count = \count($fileListSplit)
+
+        for ($i = 0; $i < $count; $i++) {
             $val = $redis->hGet($uuid5, "thread-$i");
-            $newData = array_merge(unserialize($val), $newData);
+            $newData = \array_merge(\unserialize($val), $newData);
         }
 
         $redis->del($uuid5);
@@ -423,7 +420,7 @@ class SimilarImagesTool extends Command
      * @param array $processArrays
      * @param array $processArraysSplit
      * @param LoopInterface $loop
-     * @param array $data
+     * @param string $uuid5
      * @return void
      * @throws \JsonException
      */
@@ -431,7 +428,6 @@ class SimilarImagesTool extends Command
         array $processArrays,
         array $processArraysSplit,
         LoopInterface $loop,
-        array &$data, 
         string $uuid5
     ): void {
         $progressList = [];
@@ -440,7 +436,6 @@ class SimilarImagesTool extends Command
         //@todo move files into redis cache
         $mainFileList = \json_encode($processArrays, JSON_THROW_ON_ERROR, 512);
         $path = self::TMP_DUMP_DIR . "main.json";
-        /** @noinspection ReturnFalseInspection */
         \file_put_contents($path, $mainFileList);
 
         foreach ($processArraysSplit as $thread => $processArray) {
@@ -448,7 +443,6 @@ class SimilarImagesTool extends Command
 
             $uuid = $this->getUuid();
             $path = self::TMP_DUMP_DIR . "$uuid.json";
-            /** @noinspection ReturnFalseInspection */
             \file_put_contents($path, $fileList);
 
             $level = $this->input->getOption('level');
@@ -472,19 +466,8 @@ class SimilarImagesTool extends Command
                 }
             });
 
-            $first->on('exit', static function ($code) use (&$data, $path, &$counter, $self, &$progressList, $thread) {
+            $first->on('exit', static function ($code) use (&$counter, $self, &$progressList, $thread) {
                 $counter--;
-
-                try {
-                    $dataPipe = pipe($path)
-                        ->fileGetContents
-                        ->trim
-                        ->jsonDecode(_, true, 512, JSON_THROW_ON_ERROR);
-                    $data = \array_merge_recursive($data, $dataPipe());
-                } catch (\Throwable $exception) {
-                    $progressList[$thread] =
-                        "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
-                }
 
                 $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
 

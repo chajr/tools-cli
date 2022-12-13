@@ -33,7 +33,8 @@
         "ramsey/uuid": "^3.8",
         "undemanding/difference": "^1.1",
         "kosinix/grafika": "^2.0",
-        "serafim/pipe": "^0.2.0"
+        "serafim/pipe": "^0.2.0",
+        "ext-redis": "*"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",
