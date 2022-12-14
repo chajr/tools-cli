@@ -6,109 +6,64 @@ require_once __DIR__ . '/../../../../vendor/autoload.php';
 
 use Grafika\Grafika;
 
-$hasHListFile = $argv[1];
-$level = $argv[2];
-$instanceUuid = $argv[3];
-$thread = $argv[4];
+$level = $argv[1];
+$session = $argv[2];
+$thread = $argv[3];
 
 try {
-    if (!file_exists($hasHListFile)) {
-        throw new UnexpectedValueException("Missing data file: $hasHListFile");
-    }
-
-    $mainFileList = json_decode(
-        file_get_contents(__DIR__ . '/../../../../var/tmp/dupimg/main.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR
-    );
-
-    $fileList = json_decode(file_get_contents($hasHListFile), true, 512, JSON_THROW_ON_ERROR);
     $hashes = [];
     $names = [];
-    $count = count($fileList) * count($mainFileList);
-    $done = 0;
+    $done = 1;
     $editor = Grafika::createEditor();
     $iterations = [];
     $checked = [];
     $redis = new Redis();
     $redis->connect('127.0.0.1', 6379);
 
-    foreach ($mainFileList as $index => $fileMain) {
+    $len = $redis->lLen("$session-base-paths");
+
+    while ($mainPath = $redis->lPop("$session-process-paths")) {
         $founded = [];
 
-        foreach ($fileList as $fileSecond) {
-            $mainPath = $fileMain['path'] . '/' . $fileMain['name'];
-            $secondPath = $fileSecond['path'] . '/' . $fileSecond['name'];
-
-            $mainPathHash = \hash('sha3-256', $mainPath . $secondPath);
-            $secondPathHash = \hash('sha3-256', $secondPath . $mainPath);
+        for ($index = 0; $index < $len; $index++) {
+            $secondPath = $redis->lIndex("$session-base-paths", $index);
+            $mainPathHash = "$mainPath;;;$secondPath";
+            $secondPathHash = "$secondPath;;;$mainPath";
 
             if (
-                $redis->hGet($instanceUuid, $secondPathHash)
-                || $redis->hGet($instanceUuid, $mainPathHash)
+                $redis->sIsMember("$session-checked", $secondPathHash)
+                || $redis->sIsMember("$session-checked", $mainPathHash)
                 || $mainPath === $secondPath
             ) {
-                echo json_encode([
-                    'status'  => [
-                        'all' => $count,
-                        'left' => $done++
-                    ],
-                ], JSON_THROW_ON_ERROR, 512);
+                echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
                 continue;
             }
 
-            $redis->hSet($instanceUuid, $mainPathHash, true);
-            $redis->hSet($instanceUuid, $secondPathHash, true);
-            //append to uuid key (-hash), potem explode do kasowania
+            $redis->sAdd("$session-checked", $mainPathHash);
+            $redis->sAdd("$session-checked", $secondPathHash);
 
             $hammingDistance = $editor->compare($mainPath, $secondPath);
 
             if ($hammingDistance > $level) {
-                echo json_encode([
-                    'status'  => [
-                        'all' => $count,
-                        'left' => $done++
-                    ],
-                ], JSON_THROW_ON_ERROR, 512);
+                echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
                 continue;
             }
 
             $founded[] = [
-                'path' => $fileSecond,
+                'path' => $secondPath,
                 'level' => $hammingDistance,
             ];
 
-            echo json_encode([
-                'status'  => [
-                    'all' => $count,
-                    'left' => $done++
-                ],
-            ], JSON_THROW_ON_ERROR, 512);
+            echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
         }
 
-
-        if (empty($founded)) {
-            echo json_encode([
-                'status'  => [
-                    'all' => $count,
-                    'left' => $done++
-                ],
-            ], JSON_THROW_ON_ERROR, 512);
-            continue;
-        }
-
-        $iterations[$index] = [
-            'main' => $fileMain,
+        $iterations[] = [
+            'main' => $mainPath,
             'founded' => $founded
         ];
     }
 
-    $res = $redis->hSet($instanceUuid, "thread-$thread", serialize($iterations));
-
-    if (!$res) {
-        throw new UnderflowException($redis->getLastError());
-    }
+    $res = $redis->hSet($session, "thread-$thread", json_encode($iterations, JSON_THROW_ON_ERROR, 512));
 
     echo '{"status": "ok"}';
 } catch (Throwable $exception) {
