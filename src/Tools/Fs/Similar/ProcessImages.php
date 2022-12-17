@@ -13,7 +13,7 @@ $thread = $argv[3];
 try {
     $hashes = [];
     $names = [];
-    $done = 1;
+    $done = 0;
     $editor = Grafika::createEditor();
     $iterations = [];
     $checked = [];
@@ -29,13 +29,15 @@ try {
             $secondPath = $redis->lIndex("$session-base-paths", $index);
             $mainPathHash = "$mainPath;;;$secondPath";
             $secondPathHash = "$secondPath;;;$mainPath";
+            $done++;
+            $redis->incr("$session-processed");
 
             if (
                 $redis->sIsMember("$session-checked", $secondPathHash)
                 || $redis->sIsMember("$session-checked", $mainPathHash)
                 || $mainPath === $secondPath
             ) {
-                echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
+                echo json_encode(['status' => ['done' => $done]], JSON_THROW_ON_ERROR, 512);
                 continue;
             }
 
@@ -45,7 +47,7 @@ try {
             $hammingDistance = $editor->compare($mainPath, $secondPath);
 
             if ($hammingDistance > $level) {
-                echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
+                echo json_encode(['status' => ['done' => $done]], JSON_THROW_ON_ERROR, 512);
                 continue;
             }
 
@@ -54,7 +56,12 @@ try {
                 'level' => $hammingDistance,
             ];
 
-            echo json_encode(['status' => ['done' => $done++]], JSON_THROW_ON_ERROR, 512);
+            echo json_encode(['status' => ['done' => $done]], JSON_THROW_ON_ERROR, 512);
+        }
+
+        if (empty($founded)) {
+            echo json_encode(['status' => ['done' => $done]], JSON_THROW_ON_ERROR, 512);
+            continue;
         }
 
         $iterations[] = [
@@ -65,7 +72,7 @@ try {
 
     $res = $redis->hSet($session, "thread-$thread", json_encode($iterations, JSON_THROW_ON_ERROR, 512));
 
-    echo '{"status": "ok"}';
+    echo '{"status": "ok ' . $done . '"}';
 } catch (Throwable $exception) {
     $message = $exception->getMessage();
     echo "{\"status\":\"error\",\"message\": \"$message\"}";

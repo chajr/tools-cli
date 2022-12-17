@@ -333,12 +333,12 @@ class SimilarImagesTool extends Command
         foreach ($data as $images) {
             $this->blueStyle->title('Group: ' . $counter++);
             $this->blueStyle->writeln(
-                "<fg=green>Main file: {$images['main']['path']}/{$images['main']['name']}</>"
+                "<fg=green>Main file: {$images['main']}</>"
             );
 
             foreach ($images['founded'] as $founded) {
                 $this->blueStyle->writeln(
-                    "Level: {$founded['level']}; <fg=blue>{$founded['path']['path']}/{$founded['path']['name']}</>"
+                    "Level: {$founded['level']}; <fg=blue>{$founded['path']}</>"
                 );
             }
         }
@@ -355,11 +355,11 @@ class SimilarImagesTool extends Command
 
         foreach ($data as $images) {
             $renderList .= '<div style="margin: 10px; padding: 10px; border: 1px solid black">';
-            $full = $images['main']['path'] . '/' . $images['main']['name'];
+            $full = $images['main'];
             $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full</a><br/>";
 
             foreach ($images['founded'] as $founded) {
-                $full = $founded['path']['path'] . '/' . $founded['path']['name'];
+                $full = $founded['path'];
                 $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full - Level: {$founded['level']}</a><br/>";
             }
 
@@ -386,90 +386,87 @@ class SimilarImagesTool extends Command
     protected function useThreads(array $fileList): array
     {
         $newData = [];
-        $threads = $this->input->getOption('thread');
-        $chunkValue = \ceil(\count($fileList) / $threads);
-
-        if ($chunkValue > 0) {
-            $fileListSplit = \array_chunk($fileList, (int)$chunkValue);
-        } else {
-            $fileListSplit = $fileList;
-        }
+        $threads = (int)$this->input->getOption('thread');
+        $count = \count($fileList);
+        $allChecks = $count * $count;
 
         $loop = Factory::create();
 
         $redis = new \Redis();
         $redis->connect('127.0.0.1', 6379);
-        $uuid5 = Uuid::uuid4()->toString();
+        $session = "dupimg-" . Uuid::uuid4()->toString();
 
-        $this->createProcesses($fileList, $fileListSplit, $loop, $uuid5);
-        $loop->run();
+        $this->blueStyle->infoMessage("Session: <fg=green>$session</>");
 
-        $count = \count($fileListSplit);
-
-        for ($i = 0; $i < $count; $i++) {
-            $val = $redis->hGet($uuid5, "thread-$i");
-            $newData = \array_merge(\unserialize($val), $newData);
+        foreach ($fileList as $path) {
+            $redis->rPush("$session-base-paths", $path['path'] . '/' . $path['name']);
+            $redis->rPush("$session-process-paths", $path['path'] . '/' . $path['name']);
         }
 
-        $redis->del($uuid5);
+        $this->createProcesses($threads, $loop, $session, $allChecks, $redis);
+        $loop->run();
+
+        for ($i = 0; $i < $threads; $i++) {
+            $val = $redis->hGet($session, "thread-$i");
+            if (!$val) {
+                throw new \InvalidArgumentException('Missing data from threads.');
+            }
+            $newData = \array_merge(\json_decode($val, true), $newData);
+        }
+
+        $redis->del($session);
+        $redis->del($session . '-base-paths');
+        $redis->del($session . '-checked');
+        $redis->del("$session-processed");
 
         return $newData;
     }
 
     /**
-     * @param array $processArrays
-     * @param array $processArraysSplit
+     * @param int $threads
      * @param LoopInterface $loop
-     * @param string $uuid5
+     * @param string $session
      * @return void
-     * @throws \JsonException
      */
     protected function createProcesses(
-        array $processArrays,
-        array $processArraysSplit,
+        int $threads,
         LoopInterface $loop,
-        string $uuid5
+        string $session,
+        int $allChecks,
+        \Redis $redis
     ): void {
         $progressList = [];
-        $counter = $this->input->getOption('thread');
+        $counter = (int)$this->input->getOption('thread');
 
-        //@todo move files into redis cache
-        $mainFileList = \json_encode($processArrays, JSON_THROW_ON_ERROR, 512);
-        $path = self::TMP_DUMP_DIR . "main.json";
-        \file_put_contents($path, $mainFileList);
-
-        foreach ($processArraysSplit as $thread => $processArray) {
-            $fileList = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-
-            $uuid = $this->getUuid();
-            $path = self::TMP_DUMP_DIR . "$uuid.json";
-            \file_put_contents($path, $fileList);
-
+        for ($thread = 0; $thread < $threads; $thread++) {
             $level = $this->input->getOption('level');
             $dir = __DIR__;
-            $first = new Process("php $dir/Similar/ProcessImages.php $path $level $uuid5 $thread");
+            $first = new Process("php $dir/Similar/ProcessImages.php $level $session $thread");
             $first->start($loop);
             $self = $this;
 
-            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self) {
+            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self, $allChecks, $threads, $redis, $session) {
                 $response = \json_decode($chunk, true);
 
-                if ($response && isset($response['status']['all'], $response['status']['left'])) {
-                    $status = $response['status'];
-                    $progressList[$thread] = "Thread $thread - {$status['all']}/{$status['left']}";
+                if ($response && isset($response['status']['done'])) {
+                    $sum = $redis->get("$session-processed");
+                    $progressList[$thread] = "Thread <options=bold>$thread</> checks - {$response['status']['done']}";
+                    $progressList[$threads] = "All checks - $allChecks/$sum";
 
                     $self->renderThreadInfo($progressList);
 
-                    for ($i = 0; $i < $self->input->getOption('thread') - 1; $i++) {
+                    for ($i = 0; $i < $threads; $i++) {
                         echo Interactive::MOD_LINE_CHAR;
                     }
                 }
             });
 
-            $first->on('exit', static function ($code) use (&$counter, $self, &$progressList, $thread) {
+            $first->on('exit', static function ($code) use (&$counter, $self, &$progressList, $thread, $threads, $redis, $session, $allChecks) {
                 $counter--;
 
                 $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
+                $sum = $redis->get("$session-processed");
+                $progressList[$threads] = "All checks - $allChecks/$sum";
 
                 if ($counter === 0) {
                     $self->renderThreadInfo($progressList);
@@ -500,7 +497,7 @@ class SimilarImagesTool extends Command
      */
     protected function renderThreadInfo(array $progressList): void
     {
-        for ($i = 0; $i < $this->input->getOption('thread'); $i++) {
+        for ($i = 0; $i < $this->input->getOption('thread') + 1; $i++) {
             if ($i > 0) {
                 echo "\n";
             }
