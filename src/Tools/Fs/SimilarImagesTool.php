@@ -393,7 +393,7 @@ class SimilarImagesTool extends Command
         $loop = Factory::create();
 
         $redis = new \Redis();
-        $redis->connect('127.0.0.1', 6379);
+        $redis->connect('127.0.0.1', 6378);
         $session = "dupimg-" . Uuid::uuid4()->toString();
 
         $this->blueStyle->infoMessage("Session: <fg=green>$session</>");
@@ -405,6 +405,11 @@ class SimilarImagesTool extends Command
 
         $this->createProcesses($threads, $loop, $session, $allChecks, $redis);
         $loop->run();
+
+        $errors = $redis->sMembers("$session-errors");
+        foreach ($errors as $error) {
+            $this->blueStyle->errorMessage($error);
+        }
 
         for ($i = 0; $i < $threads; $i++) {
             $val = $redis->hGet($session, "thread-$i");
@@ -418,6 +423,8 @@ class SimilarImagesTool extends Command
         $redis->del($session . '-base-paths');
         $redis->del($session . '-checked');
         $redis->del("$session-processed");
+        $redis->del("$session-errors");
+        $redis->del("$session-hashes");
 
         return $newData;
     }
@@ -441,7 +448,11 @@ class SimilarImagesTool extends Command
         for ($thread = 0; $thread < $threads; $thread++) {
             $level = $this->input->getOption('level');
             $dir = __DIR__;
-            $first = new Process("php $dir/Similar/ProcessImages.php $level $session $thread");
+            $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
+//            dump("php $dir/Similar/ProcessImages.php $level $session $thread $verbose");
+//            exit;
+
+            $first = new Process("php $dir/Similar/ProcessImages.php $level $session $thread $verbose");
             $first->start($loop);
             $self = $this;
 
