@@ -23,17 +23,15 @@ try {
     $redis->connect('127.0.0.1', 6378);
     $verboseContent = '';
 
-    $len = $redis->lLen("$session-base-paths");
-
-    while ($mainPath = $redis->lPop("$session-process-paths")) {
+    while ($mainPath = $redis->lPop("$session-paths-compare")) {
         $founded = [];
+        $hashMain = $redis->hGet("$session-hashes", $mainPath);
 
-        for ($index = 0; $index < $len; $index++) {
-            $secondPath = $redis->lIndex("$session-base-paths", $index);
+        foreach ($redis->hgetAll("$session-hashes") as $secondPath => $secondHash) {
             $mainPathHash = "$mainPath;;;$secondPath";
             $secondPathHash = "$secondPath;;;$mainPath";
             $done++;
-            $redis->incr("$session-processed");
+            $redis->incr("$session-compare-processed");
 
             if ($verbose === '1') {
                 $verboseContent = " - $mainPath - $secondPath";
@@ -52,8 +50,7 @@ try {
             $redis->sAdd("$session-checked", $secondPathHash);
 
             try {
-                $hammingDistance = $editor->compareNew($mainPath, $secondPath, $redis, $session);
-//                $hammingDistance = $editor->compare($mainPath, $secondPath);
+                $hammingDistance = $editor->compareHashes($hashMain, $secondHash);
             } catch (Throwable $exception) {
                 $redis->sAdd("$session-errors", $exception->getMessage());
             }
@@ -63,7 +60,7 @@ try {
                 continue;
             }
 
-            $founded[] = [
+            $founded[$mainPath][] = [
                 'path' => $secondPath,
                 'level' => $hammingDistance,
             ];
@@ -76,13 +73,14 @@ try {
             continue;
         }
 
-        $iterations[] = [
-            'main' => $mainPath,
-            'founded' => $founded
-        ];
-    }
+        $foundedMain = $redis->hGet("$session-founded", "thread-$thread");
 
-    $res = $redis->hSet($session, "thread-$thread", json_encode($iterations, JSON_THROW_ON_ERROR, 512));
+        if ($foundedMain) {
+            $founded = array_merge(json_decode($foundedMain, true), $founded);
+        }
+
+        $redis->hSet("$session-founded", "thread-$thread", json_encode($founded, JSON_THROW_ON_ERROR, 512));
+    }
 
     echo '{"status": {"message": "ok ' . $done . $verboseContent . '"}}';
 } catch (Throwable $exception) {
