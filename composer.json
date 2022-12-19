@@ -32,9 +32,9 @@
         "react/child-process": "^0.6.1",
         "ramsey/uuid": "^3.8",
         "undemanding/difference": "^1.1",
-        "kosinix/grafika": "^2.0",
         "serafim/pipe": "^0.2.0",
-        "ext-redis": "*"
+        "ext-redis": "*",
+        "chajr/grafika": "dev-master"
     },
     "require-dev": {
         "satooshi/php-coveralls": "1.0.*",

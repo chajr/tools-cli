@@ -39,6 +39,7 @@ use React\{
 };
 use Grafika\Grafika;
 use ToolsCli\Tools\Fs\Duplicated\Interactive;
+use BlueData\Data\Formats;
 
 class SimilarImagesTool extends Command
 {
@@ -126,6 +127,13 @@ class SimilarImagesTool extends Command
             's',
             null,
             'Save result in given file name.'
+        );
+
+        $this->addOption(
+            'split',
+            'S',
+            InputOption::VALUE_OPTIONAL,
+            'Split output files for given number of found values.'
         );
     }
 
@@ -334,13 +342,21 @@ class SimilarImagesTool extends Command
 
         foreach ($data as $main => $images) {
             $this->blueStyle->title('Group: ' . $counter++);
+            $fileInfo = new \SplFileInfo($main);
+            $size = Formats::dataSize($fileInfo->getSize());
+            $imageSize = getimagesize($main);
+
             $this->blueStyle->writeln(
-                "<fg=green>Main file: $main</>"
+                "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</> <fg=green>$main</>"
             );
 
             foreach ($images as $founded) {
+                $fileInfo = new \SplFileInfo($founded['path']);
+                $size = Formats::dataSize($fileInfo->getSize());
+                $imageSize = getimagesize($founded['path']);
+
                 $this->blueStyle->writeln(
-                    "Level: {$founded['level']}; <fg=blue>{$founded['path']}</>"
+                    "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</> Level: <options=bold>{$founded['level']}</>; <fg=blue>{$founded['path']}</>"
                 );
             }
         }
@@ -353,21 +369,49 @@ class SimilarImagesTool extends Command
      */
     protected function html(array $data): void
     {
+        $split = (int)$this->input->getOption('split');
         $renderList = '<html><body>';
+        $count = 0;
+        $countFile = 0;
 
         foreach ($data as $main => $images) {
+            $count++;
+            $fileInfo = new \SplFileInfo($main);
+            $size = Formats::dataSize($fileInfo->getSize());
+            $encoded = str_replace("%", "%25", $main);
+            $imageSize = getimagesize($main);
+
             $renderList .= '<div style="margin: 10px; padding: 10px; border: 1px solid black">';
-            $renderList .= "<img src='$main' width='400px'/> <a target='blank' href=\"$main\">$main</a><br/>";
+            $renderList .= "<img src='$encoded' width='400px'/>";
+            $renderList .= " $size {$imageSize[0]}x{$imageSize[1]} ";
+            $renderList .= " <a target='blank' href=\"$encoded\">$main</a><br/>";
 
             foreach ($images as $founded) {
                 $full = $founded['path'];
-                $renderList .= "<img src='$full' width='400px'/> <a target='blank' href=\"$full\">$full - Level: {$founded['level']}</a><br/>";
+                $fileInfo = new \SplFileInfo($full);
+                $size = Formats::dataSize($fileInfo->getSize());
+                $encoded = str_replace("%", "%25", $full);
+                $imageSize = getimagesize($full);
+
+                $renderList .= "<img src='$encoded' width='400px'/>";
+                $renderList .= "$size {$imageSize[0]}x{$imageSize[1]} <span>Level: {$founded['level']}</span> ";
+                $renderList .= " <a target='blank' href=\"$encoded\">$full</a><br/>";
             }
 
             $renderList .= '</div>';
-        }
 
-        $renderList .= '</body></html>';
+            if ($split && $split === $count) {
+                $count = 0;
+                $renderList .= '</body></html>';
+
+                file_put_contents("similar_images_output_$countFile.html", $renderList);
+                $countFile++;
+
+                $renderList = '<html><body>';
+            } else {
+                $renderList .= '</body></html>';
+            }
+        }
 
         $saved = file_put_contents('similar_images_output.html', $renderList);
 
@@ -382,14 +426,13 @@ class SimilarImagesTool extends Command
     /**
      * @param array $fileList
      * @return array
-     * @throws \JsonException
+     * @throws \Exception
      */
     protected function useThreads(array $fileList): array
     {
         $newData = [];
         $threads = (int)$this->input->getOption('thread');
         $count = \count($fileList);
-        $allChecks = $count * $count;
 
         $redis = new \Redis();
         $redis->connect('127.0.0.1', 6378);
@@ -417,7 +460,7 @@ class SimilarImagesTool extends Command
         $this->blueStyle->infoMessage("Compare hashes");
 
         $loop = Factory::create();
-        $this->createProcessesCompare($threads, $loop, $session, $allChecks, $redis);
+        $this->createProcessesCompare($threads, $loop, $session, $redis);
         $loop->run();
 
         $errors = $redis->sMembers("$session-errors");
@@ -432,11 +475,15 @@ class SimilarImagesTool extends Command
             }
         }
 
-        $redis->del("$session-compare-processed");
-        $redis->del("$session-checked");
-        $redis->del("$session-founded");
-        $redis->del("$session-errors");
-        $redis->del("$session-hashes");
+        try {
+            $redis->del("$session-compare-processed");
+            $redis->del("$session-checked");
+            $redis->del("$session-founded");
+            $redis->del("$session-errors");
+            $redis->del("$session-hashes");
+        } catch (\Throwable $exception) {
+            $this->blueStyle->errorMessage('Unable to clear cache: ' . $exception->getMessage());
+        }
 
         return $newData;
     }
@@ -445,6 +492,8 @@ class SimilarImagesTool extends Command
      * @param int $threads
      * @param LoopInterface $loop
      * @param string $session
+     * @param int $allChecks
+     * @param \Redis $redis
      * @return void
      */
     protected function createProcessesHashes(
@@ -470,7 +519,7 @@ class SimilarImagesTool extends Command
 
                 if ($response && isset($response['status']['done'])) {
                     $sum = $redis->get("$session-hash-processed");
-                    $progressList[$thread] = "Thread <options=bold>$thread</> hash - {$response['status']['done']}";
+                    $progressList[$thread] = "Thread <options=bold>$thread</> hashes - {$response['status']['done']}";
                     $progressList[$threads] = "Generated hashes - $allChecks/$sum";
 
                     $self->renderThreadInfo($progressList);
@@ -501,17 +550,19 @@ class SimilarImagesTool extends Command
      * @param int $threads
      * @param LoopInterface $loop
      * @param string $session
+     * @param \Redis $redis
      * @return void
      */
     protected function createProcessesCompare(
         int $threads,
         LoopInterface $loop,
         string $session,
-        int $allChecks,
         \Redis $redis
     ): void {
         $progressList = [];
         $counter = (int)$this->input->getOption('thread');
+        $count = $redis->lLen("$session-paths-compare");
+        $allChecks = $count * $count;
 
         for ($thread = 0; $thread < $threads; $thread++) {
             $level = $this->input->getOption('level');
@@ -527,7 +578,7 @@ class SimilarImagesTool extends Command
 
                 if ($response && isset($response['status']['done'])) {
                     $sum = $redis->get("$session-compare-processed");
-                    $progressList[$thread] = "Thread <options=bold>$thread</> checks - {$response['status']['done']}";
+                    $progressList[$thread] = "Thread <options=bold>$thread</> compares - {$response['status']['done']}";
                     $progressList[$threads] = "All compares - $allChecks/$sum";
 
                     $self->renderThreadInfo($progressList);

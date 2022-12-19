@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "02c2fa6f654e9700b9ce2e3ab1e90e44",
+    "content-hash": "4bb49a95b670de5805114faeb569aa56",
     "packages": [
         {
             "name": "bentools/cartesian-product",
@@ -544,6 +544,51 @@
             "time": "2022-07-03T08:41:37+00:00"
         },
         {
+            "name": "chajr/grafika",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/chajr/grafika.git",
+                "reference": "58f61f8b3da9d8d3862a921076bed1f571495121"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/chajr/grafika/zipball/58f61f8b3da9d8d3862a921076bed1f571495121",
+                "reference": "58f61f8b3da9d8d3862a921076bed1f571495121",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Grafika\\": "src/Grafika"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT",
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Nico Amarilla",
+                    "homepage": "https://www.kosinix.com"
+                }
+            ],
+            "description": "An image manipulation library for PHP. Fork with some changes.",
+            "homepage": "http://kosinix.github.io/grafika",
+            "keywords": [
+                "grafika"
+            ],
+            "support": {
+                "source": "https://github.com/chajr/grafika/tree/master"
+            },
+            "time": "2022-12-17T15:18:40+00:00"
+        },
+        {
             "name": "container-interop/container-interop",
             "version": "1.2.0",
             "source": {
@@ -617,47 +662,6 @@
                 "event-emitter"
             ],
             "time": "2017-07-23T21:35:13+00:00"
-        },
-        {
-            "name": "kosinix/grafika",
-            "version": "2.0.8",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/kosinix/grafika.git",
-                "reference": "211f61fc334b8b36616b23e8af7c5727971d96ee"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/kosinix/grafika/zipball/211f61fc334b8b36616b23e8af7c5727971d96ee",
-                "reference": "211f61fc334b8b36616b23e8af7c5727971d96ee",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Grafika\\": "src/Grafika"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT",
-                "GPL-2.0+"
-            ],
-            "authors": [
-                {
-                    "name": "Nico Amarilla",
-                    "homepage": "https://www.kosinix.com"
-                }
-            ],
-            "description": "An image manipulation library for PHP.",
-            "homepage": "http://kosinix.github.io/grafika",
-            "keywords": [
-                "grafika"
-            ],
-            "time": "2017-06-20T03:13:49+00:00"
         },
         {
             "name": "mikehaertl/php-shellcommand",
@@ -4216,11 +4220,14 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "chajr/grafika": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.3.0"
+        "php": ">=7.3.0",
+        "ext-redis": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.1.0"

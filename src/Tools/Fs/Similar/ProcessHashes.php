@@ -24,7 +24,6 @@ try {
 
     while ($path = $redis->lPop("$session-paths-hashes")) {
         $founded = [];
-        $redis->incr("$session-hash-processed");
         $done++;
 
         if ($verbose === '1') {
@@ -35,11 +34,12 @@ try {
             $bin = $editor->generateHash($path);
 
             $redis->hSet("$session-hashes", $path, $bin);
+            $redis->rPush("$session-paths-compare", $path);
+            $redis->incr("$session-hash-processed");
         } catch (Throwable $exception) {
             $redis->sAdd("$session-errors", $exception->getMessage());
         }
 
-        $redis->rPush("$session-paths-compare", $path);
         echo json_encode(['status' => ['done' => $done . $verboseContent]], JSON_THROW_ON_ERROR, 512);
     }
 
