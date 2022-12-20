@@ -52,6 +52,9 @@ class SimilarImagesTool extends Command
     protected FormatterHelper $formatter;
     protected string $messageFormat = '[ <fg=blue>INFO</> ]     %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% - %message%';
     protected ProgressBar $progressBar;
+    protected ?\Redis $redis;
+    protected string $session = '';
+    protected int $threads = 0;
 
     /**
      * @param string $name
@@ -188,8 +191,9 @@ class SimilarImagesTool extends Command
         $data = $this->getFilesData($fileList, $data);
 
         $this->blueStyle->infoMessage('Compare files.');
+        $this->threads = (int)$this->input->getOption('thread');
 
-        if ($this->input->getOption('thread') > 0) {
+        if ($this->threads > 0) {
             $data = $this->useThreads($data);
         } else {
             $data = $this->useSingleProcessCompare($data);
@@ -361,7 +365,8 @@ class SimilarImagesTool extends Command
             $imageSize = getimagesize($main);
 
             $this->blueStyle->writeln(
-                "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</> <fg=green>$main</>"
+                "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>"
+                . "x<options=bold>{$imageSize[1]}</> <fg=green>$main</>"
             );
 
             foreach ($images as $founded) {
@@ -370,7 +375,8 @@ class SimilarImagesTool extends Command
                 $imageSize = getimagesize($founded['path']);
 
                 $this->blueStyle->writeln(
-                    "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</> Level: <options=bold>{$founded['level']}</>; <fg=blue>{$founded['path']}</>"
+                    "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</>"
+                    . " Level: <options=bold>{$founded['level']}</>; <fg=blue>{$founded['path']}</>"
                 );
             }
         }
@@ -445,40 +451,39 @@ class SimilarImagesTool extends Command
     protected function useThreads(array $fileList): array
     {
         $newData = [];
-        $threads = (int)$this->input->getOption('thread');
+        $this->threads = (int)$this->input->getOption('thread');
         $count = \count($fileList);
         $threadIdentical = 0;
 
-        $redis = new \Redis();
-        $redis->connect('127.0.0.1', 6378);
-        $session = "dupimg-" . Uuid::uuid4()->toString();
+        $this->redis = new \Redis();
+        $this->redis->connect('127.0.0.1', 6378);
+        $this->session = "dupimg-" . Uuid::uuid4()->toString();
 
-        $this->blueStyle->infoMessage("Session: <fg=green>$session</>");
+        $this->blueStyle->infoMessage("Session: <fg=green>$this->session</>");
         $this->blueStyle->infoMessage("Generate hashes");
 
         foreach ($fileList as $path) {
-            $redis->rPush("$session-paths-hashes", $path['path'] . '/' . $path['name']);
+            $this->redis->rPush("$this->session-paths-hashes", $path['path'] . '/' . $path['name']);
         }
 
         $loop = Factory::create();
-        $this->createProcessesHashes($threads, $loop, $session, $count, $redis);
+        $this->createProcessesHashes($loop, $count);
         $loop->run();
 
-        $errors = $redis->sMembers("$session-errors");
+        $errors = $this->redis->sMembers("$this->session-errors");
         foreach ($errors as $error) {
             $this->blueStyle->errorMessage($error);
         }
 
-        $redis->del("$session-errors");
-        $redis->del("$session-hash-processed");
+        $this->clearCache(['hash-processed', 'errors']);
 
         if ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) {
             $this->blueStyle->infoMessage("Find identical.");
-            $identical = $this->processIdentical($redis, $session);
+            $identical = $this->processIdentical();
             $this->blueStyle->newLine();
             $this->blueStyle->infoMessage("Identical founded: <fg=green>$identical</>.");
 
-            $redis->del("$session-hashes-identical");
+            $this->clearCache(['hashes-identical']);
 
             $threadIdentical = 1;
         }
@@ -490,10 +495,10 @@ class SimilarImagesTool extends Command
             $this->blueStyle->infoMessage("Compare hashes.");
 
             $loop = Factory::create();
-            $this->createProcessesCompare($threads, $loop, $session, $redis);
+            $this->createProcessesCompare($loop);
             $loop->run();
 
-            $errors = $redis->sMembers("$session-errors");
+            $errors = $this->redis->sMembers("$this->session-errors");
             foreach ($errors as $error) {
                 $this->blueStyle->errorMessage($error);
             }
@@ -505,17 +510,17 @@ class SimilarImagesTool extends Command
             }
 
             $progressBar->setFormat($this->messageFormat);
-            $progressBar->start($threads + $threadIdentical);
+            $progressBar->start($this->threads + $threadIdentical);
         }
 
         if (!$this->input->getOption('identical')) {
-            for ($i = 0; $i < $threads; $i++) {
+            for ($i = 0; $i < $this->threads; $i++) {
                 if ($this->input->getOption('progress-info')) {
                     $progressBar->setMessage("thread $i");
                 }
                 $progressBar->advance();
 
-                $val = $redis->hGet("$session-founded", "thread-$i");
+                $val = $this->redis->hGet("$this->session-founded", "thread-$i");
                 if ($val) {
                     $newData = \array_merge(\json_decode($val, true), $newData);
                 }
@@ -525,7 +530,7 @@ class SimilarImagesTool extends Command
         if ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) {
             $progressBar?->advance();
 
-            $val = $redis->hGet("$session-founded", "thread-x");
+            $val = $this->redis->hGet("$this->session-founded", "thread-x");
             if ($val) {
                 $threadX = \json_decode($val, true);
 
@@ -543,13 +548,9 @@ class SimilarImagesTool extends Command
 
         $this->blueStyle->newLine();
         $this->blueStyle->infoMessage('Cache clearing');
-        try {
-            $redis->del("$session-compare-processed");
-            $redis->del("$session-checked");
-            $redis->del("$session-founded");
-            $redis->del("$session-errors");
-            $redis->del("$session-hashes");
 
+        try {
+            $this->clearCache(['compare-processed', 'checked', 'founded', 'errors', 'hashes']);
             $this->blueStyle->okMessage('Cache clear done');
         } catch (\Throwable $exception) {
             $this->blueStyle->errorMessage('Unable to clear cache: ' . $exception->getMessage());
@@ -559,12 +560,21 @@ class SimilarImagesTool extends Command
     }
 
     /**
-     * @param $redis
-     * @param $session
+     * @param array $types
+     * @return void
+     */
+    protected function clearCache(array $types): void
+    {
+        foreach ($types as $type) {
+            $this->redis->del("$this->session-$type");
+        }
+    }
+
+    /**
      * @return int
      * @throws \JsonException
      */
-    protected function processIdentical($redis, $session): int
+    protected function processIdentical(): int
     {
         try {
             $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
@@ -572,7 +582,7 @@ class SimilarImagesTool extends Command
             throw new \DomainException('RegisterException: ' . $exception->getMessage());
         }
 
-        $identical = $redis->hGetAll("$session-hashes-identical");
+        $identical = $this->redis->hGetAll("$this->session-hashes-identical");
         $progressBar->setFormat($this->messageFormat);
         $progressBar->start(\count($identical));
         $identicalCount = 0;
@@ -592,8 +602,8 @@ class SimilarImagesTool extends Command
                     $mainPathHash = "$mainPath;;;$secondPath";
                     $secondPathHash = "$secondPath;;;$mainPath";
 
-                    $redis->sAdd("$session-checked", $mainPathHash);
-                    $redis->sAdd("$session-checked", $secondPathHash);
+                    $this->redis->sAdd("$this->session-checked", $mainPathHash);
+                    $this->redis->sAdd("$this->session-checked", $secondPathHash);
 
                     $founded[$mainPath][] = [
                         'path' => $secondPath,
@@ -601,13 +611,17 @@ class SimilarImagesTool extends Command
                     ];
                 }
 
-                $foundedMain = $redis->hGet("$session-founded", "thread-x");
+                $foundedMain = $this->redis->hGet("$this->session-founded", "thread-x");
 
                 if ($foundedMain) {
                     $founded = \array_merge(\json_decode($foundedMain, true), $founded);
                 }
 
-                $redis->hSet("$session-founded", "thread-x", \json_encode($founded, JSON_THROW_ON_ERROR, 512));
+                $this->redis->hSet(
+                    "$this->session-founded",
+                    "thread-x",
+                    \json_encode($founded, JSON_THROW_ON_ERROR, 512)
+                );
             }
         }
 
@@ -617,120 +631,104 @@ class SimilarImagesTool extends Command
     }
 
     /**
-     * @param int $threads
      * @param LoopInterface $loop
-     * @param string $session
      * @param int $allChecks
-     * @param \Redis $redis
      * @return void
      */
-    protected function createProcessesHashes(
-        int $threads,
-        LoopInterface $loop,
-        string $session,
-        int $allChecks,
-        \Redis $redis
-    ): void {
-        $progressList = [];
-        $counter = (int)$this->input->getOption('thread');
+    protected function createProcessesHashes(LoopInterface $loop, int $allChecks): void
+    {
         $identical = ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) ? 1 : 0;
+        $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
+        $dir = __DIR__;
 
-        for ($thread = 0; $thread < $threads; $thread++) {
-            $dir = __DIR__;
-            $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
-
-            $first = new Process("php $dir/Similar/ProcessHashes.php $session $thread $verbose $identical");
-            $first->start($loop);
-            $self = $this;
-
-            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self, $allChecks, $threads, $redis, $session) {
-                $response = \json_decode($chunk, true);
-
-                if ($response && isset($response['status']['done'])) {
-                    $sum = $redis->get("$session-hash-processed");
-                    $progressList[$thread] = "Thread <options=bold>$thread</> hashes - {$response['status']['done']}";
-                    $progressList[$threads] = "Generated hashes - $allChecks/$sum";
-
-                    $self->renderThreadInfo($progressList);
-
-                    for ($i = 0; $i < $threads; $i++) {
-                        echo Interactive::MOD_LINE_CHAR;
-                    }
-                }
-            });
-
-            $first->on('exit', static function ($code) use (&$counter, $self, &$progressList, $thread, $threads, $redis, $session, $allChecks) {
-                $counter--;
-
-                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
-                $sum = $redis->get("$session-hash-processed");
-                $progressList[$threads] = "Generated hashes - $allChecks/$sum";
-
-                if ($counter === 0) {
-                    $self->renderThreadInfo($progressList);
-
-                    $self->blueStyle->newLine();
-                }
-            });
-        }
+        $this->process(
+            "php $dir/Similar/ProcessHashes.php $this->session $verbose $identical",
+            $loop,
+            $allChecks,
+            'hash-processed',
+            'hashes'
+        );
     }
 
     /**
-     * @param int $threads
      * @param LoopInterface $loop
-     * @param string $session
-     * @param \Redis $redis
      * @return void
      */
-    protected function createProcessesCompare(
-        int $threads,
+    protected function createProcessesCompare(LoopInterface $loop): void
+    {
+        $count = $this->redis->lLen("$this->session-paths-compare");
+        $allChecks = $count * $count;
+        $level = $this->input->getOption('level');
+        $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
+        $dir = __DIR__;
+
+        $this->process(
+            "php $dir/Similar/ProcessImages.php $level $this->session $verbose",
+            $loop,
+            $allChecks,
+            'compare-processed',
+            'compares'
+        );
+    }
+
+    /**
+     * @param string $processCommand
+     * @param LoopInterface $loop
+     * @param int $allChecks
+     * @param string $keyName
+     * @param string $type
+     * @return void
+     */
+    protected function process(
+        string $processCommand,
         LoopInterface $loop,
-        string $session,
-        \Redis $redis
+        int $allChecks,
+        string $keyName,
+        string $type
     ): void {
         $progressList = [];
         $counter = (int)$this->input->getOption('thread');
-        $count = $redis->lLen("$session-paths-compare");
-        $allChecks = $count * $count;
 
-        for ($thread = 0; $thread < $threads; $thread++) {
-            $level = $this->input->getOption('level');
-            $dir = __DIR__;
-            $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
-
-            $first = new Process("php $dir/Similar/ProcessImages.php $level $session $thread $verbose");
+        for ($thread = 0; $thread < $this->threads; $thread++) {
+            $first = new Process("$processCommand $thread");
             $first->start($loop);
             $self = $this;
 
-            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self, $allChecks, $threads, $redis, $session) {
-                $response = \json_decode($chunk, true);
+            $first->stdout->on(
+                'data',
+                static function ($chunk) use ($thread, &$progressList, $self, $allChecks, $keyName, $type) {
+                    $response = \json_decode($chunk, true);
 
-                if ($response && isset($response['status']['done'])) {
-                    $sum = $redis->get("$session-compare-processed");
-                    $progressList[$thread] = "Thread <options=bold>$thread</> compares - {$response['status']['done']}";
-                    $progressList[$threads] = "All compares - $allChecks/$sum";
+                    if ($response && isset($response['status']['done'])) {
+                        $sum = $self->redis->get("$self->session-$keyName");
+                        $progressList[$thread] = "Thread <options=bold>$thread</> $type - {$response['status']['done']}";
+                        $progressList[$self->threads] = "Generated $type - $allChecks/$sum";
 
-                    $self->renderThreadInfo($progressList);
+                        $self->renderThreadInfo($progressList);
 
-                    for ($i = 0; $i < $threads; $i++) {
-                        echo Interactive::MOD_LINE_CHAR;
+                        for ($i = 0; $i < $self->threads; $i++) {
+                            echo Interactive::MOD_LINE_CHAR;
+                        }
                     }
                 }
-            });
+            );
 
-            $first->on('exit', static function ($code) use (&$counter, $self, &$progressList, $thread, $threads, $redis, $session, $allChecks) {
-                $counter--;
+            $first->on(
+                'exit',
+                static function ($code) use (&$counter, $self, &$progressList, $thread, $allChecks, $keyName, $type) {
+                    $counter--;
 
-                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
-                $sum = $redis->get("$session-compare-processed");
-                $progressList[$threads] = "All compares - $allChecks/$sum";
+                    $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
+                    $sum = $self->redis->get("$self->session-$keyName");
+                    $progressList[$self->threads] = "All $type - $allChecks/$sum";
 
-                if ($counter === 0) {
-                    $self->renderThreadInfo($progressList);
+                    if ($counter === 0) {
+                        $self->renderThreadInfo($progressList);
 
-                    $self->blueStyle->newLine();
+                        $self->blueStyle->newLine();
+                    }
                 }
-            });
+            );
         }
     }
 

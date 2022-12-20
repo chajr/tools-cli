@@ -8,8 +8,8 @@ use ToolsCli\Tools\Fs\Similar\Editor;
 
 $level = $argv[1];
 $session = $argv[2];
-$thread = $argv[3];
-$verbose = $argv[4];
+$verbose = $argv[3];
+$thread = $argv[4];
 $redis = null;
 
 try {

@@ -7,9 +7,9 @@ require_once __DIR__ . '/../../../../vendor/autoload.php';
 use ToolsCli\Tools\Fs\Similar\Editor;
 
 $session = $argv[1];
-$thread = $argv[2];
-$verbose = $argv[3];
-$identical = $argv[4];
+$verbose = $argv[2];
+$identical = $argv[3];
+$thread = $argv[4];
 $redis = null;
 
 try {
