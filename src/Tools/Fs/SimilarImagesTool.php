@@ -130,6 +130,20 @@ class SimilarImagesTool extends Command
         );
 
         $this->addOption(
+            'compare-hash',
+            'H',
+            null,
+            'Search identical images by hash before checking all images.'
+        );
+
+        $this->addOption(
+            'identical',
+            'I',
+            null,
+            'Search only identical images (compression can cause some differences).'
+        );
+
+        $this->addOption(
             'split',
             'S',
             InputOption::VALUE_OPTIONAL,
@@ -433,6 +447,7 @@ class SimilarImagesTool extends Command
         $newData = [];
         $threads = (int)$this->input->getOption('thread');
         $count = \count($fileList);
+        $threadIdentical = 0;
 
         $redis = new \Redis();
         $redis->connect('127.0.0.1', 6378);
@@ -457,35 +472,148 @@ class SimilarImagesTool extends Command
         $redis->del("$session-errors");
         $redis->del("$session-hash-processed");
 
-        $this->blueStyle->infoMessage("Compare hashes");
+        if ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) {
+            $this->blueStyle->infoMessage("Find identical.");
+            $identical = $this->processIdentical($redis, $session);
+            $this->blueStyle->newLine();
+            $this->blueStyle->infoMessage("Identical founded: <fg=green>$identical</>.");
 
-        $loop = Factory::create();
-        $this->createProcessesCompare($threads, $loop, $session, $redis);
-        $loop->run();
+            $redis->del("$session-hashes-identical");
 
-        $errors = $redis->sMembers("$session-errors");
-        foreach ($errors as $error) {
-            $this->blueStyle->errorMessage($error);
+            $threadIdentical = 1;
         }
 
-        for ($i = 0; $i < $threads; $i++) {
-            $val = $redis->hGet("$session-founded", "thread-$i");
-            if ($val) {
-                $newData = \array_merge(\json_decode($val, true), $newData);
+        $progressBar = null;
+        $this->blueStyle->infoMessage('Merge founded images.');
+
+        if (!$this->input->getOption('identical')) {
+            $this->blueStyle->infoMessage("Compare hashes.");
+
+            $loop = Factory::create();
+            $this->createProcessesCompare($threads, $loop, $session, $redis);
+            $loop->run();
+
+            $errors = $redis->sMembers("$session-errors");
+            foreach ($errors as $error) {
+                $this->blueStyle->errorMessage($error);
+            }
+
+            try {
+                $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
+            } catch (RegisterException $exception) {
+                throw new \DomainException('RegisterException: ' . $exception->getMessage());
+            }
+
+            $progressBar->setFormat($this->messageFormat);
+            $progressBar->start($threads + $threadIdentical);
+        }
+
+        if (!$this->input->getOption('identical')) {
+            for ($i = 0; $i < $threads; $i++) {
+                if ($this->input->getOption('progress-info')) {
+                    $progressBar->setMessage("thread $i");
+                }
+                $progressBar->advance();
+
+                $val = $redis->hGet("$session-founded", "thread-$i");
+                if ($val) {
+                    $newData = \array_merge(\json_decode($val, true), $newData);
+                }
             }
         }
 
+        if ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) {
+            $progressBar?->advance();
+
+            $val = $redis->hGet("$session-founded", "thread-x");
+            if ($val) {
+                $threadX = \json_decode($val, true);
+
+                foreach ($threadX as $mainPath => $founded) {
+                    if (\array_key_exists($mainPath, $newData)) {
+                        $newData[$mainPath] = \array_merge($newData[$mainPath], $founded);
+                    } else {
+                        $newData[$mainPath] = $founded;
+                    }
+                }
+            }
+        }
+
+        $progressBar?->finish();
+
+        $this->blueStyle->newLine();
+        $this->blueStyle->infoMessage('Cache clearing');
         try {
             $redis->del("$session-compare-processed");
             $redis->del("$session-checked");
             $redis->del("$session-founded");
             $redis->del("$session-errors");
             $redis->del("$session-hashes");
+
+            $this->blueStyle->okMessage('Cache clear done');
         } catch (\Throwable $exception) {
             $this->blueStyle->errorMessage('Unable to clear cache: ' . $exception->getMessage());
         }
 
         return $newData;
+    }
+
+    /**
+     * @param $redis
+     * @param $session
+     * @return int
+     * @throws \JsonException
+     */
+    protected function processIdentical($redis, $session): int
+    {
+        try {
+            $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
+        } catch (RegisterException $exception) {
+            throw new \DomainException('RegisterException: ' . $exception->getMessage());
+        }
+
+        $identical = $redis->hGetAll("$session-hashes-identical");
+        $progressBar->setFormat($this->messageFormat);
+        $progressBar->start(\count($identical));
+        $identicalCount = 0;
+
+        foreach ($identical as $list) {
+            $decoded = \json_decode($list, true);
+
+            $progressBar->setMessage("");
+            $progressBar->advance();
+
+            if (\count($decoded) > 1) {
+                $mainPath = \array_shift($decoded);
+                $founded = [];
+
+                foreach ($decoded as $secondPath) {
+                    $identicalCount++;
+                    $mainPathHash = "$mainPath;;;$secondPath";
+                    $secondPathHash = "$secondPath;;;$mainPath";
+
+                    $redis->sAdd("$session-checked", $mainPathHash);
+                    $redis->sAdd("$session-checked", $secondPathHash);
+
+                    $founded[$mainPath][] = [
+                        'path' => $secondPath,
+                        'level' => 0,
+                    ];
+                }
+
+                $foundedMain = $redis->hGet("$session-founded", "thread-x");
+
+                if ($foundedMain) {
+                    $founded = \array_merge(\json_decode($foundedMain, true), $founded);
+                }
+
+                $redis->hSet("$session-founded", "thread-x", \json_encode($founded, JSON_THROW_ON_ERROR, 512));
+            }
+        }
+
+        $progressBar->finish();
+
+        return $identicalCount;
     }
 
     /**
@@ -505,12 +633,13 @@ class SimilarImagesTool extends Command
     ): void {
         $progressList = [];
         $counter = (int)$this->input->getOption('thread');
+        $identical = ($this->input->getOption('compare-hash') || $this->input->getOption('identical')) ? 1 : 0;
 
         for ($thread = 0; $thread < $threads; $thread++) {
             $dir = __DIR__;
             $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
 
-            $first = new Process("php $dir/Similar/ProcessHashes.php $session $thread $verbose");
+            $first = new Process("php $dir/Similar/ProcessHashes.php $session $thread $verbose $identical");
             $first->start($loop);
             $self = $this;
 

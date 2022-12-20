@@ -9,6 +9,7 @@ use ToolsCli\Tools\Fs\Similar\Editor;
 $session = $argv[1];
 $thread = $argv[2];
 $verbose = $argv[3];
+$identical = $argv[4];
 $redis = null;
 
 try {
@@ -32,10 +33,23 @@ try {
 
         try {
             $bin = $editor->generateHash($path);
+            $decoded = [];
 
             $redis->hSet("$session-hashes", $path, $bin);
             $redis->rPush("$session-paths-compare", $path);
             $redis->incr("$session-hash-processed");
+
+            if ($identical === '1') {
+                $identical = $redis->hGet("$session-hashes-identical", $bin);
+                if ($identical) {
+                    $decoded = json_decode($identical, true);
+                }
+
+                $decoded[] = $path;
+                $encoded = json_encode($decoded, JSON_THROW_ON_ERROR, 512);
+                $redis->hSet("$session-hashes-identical", $bin, $encoded);
+            }
+
         } catch (Throwable $exception) {
             $redis->sAdd("$session-errors", $exception->getMessage());
         }
