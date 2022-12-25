@@ -68,14 +68,6 @@ class SimilarImagesTool extends Command
     }
 
     /**
-     * @return Style
-     */
-    public function getBlueStyle(): Style
-    {
-        return $this->blueStyle;
-    }
-
-    /**
      * @return InputInterface
      */
     public function getInput(): InputInterface
@@ -222,8 +214,8 @@ class SimilarImagesTool extends Command
     protected function useSingleProcessCompare(array $data): array
     {
         $editor = Grafika::createEditor();
-        $iterations = [];
         $checked = [];
+        $founded = [];
 
         try {
             $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
@@ -234,8 +226,7 @@ class SimilarImagesTool extends Command
         $progressBar->setFormat($this->messageFormat);
         $progressBar->start(\count($data));
 
-        foreach ($data as $index => $fileMain) {
-            $founded = [];
+        foreach ($data as $fileMain) {
 
             if ($this->input->getOption('progress-info')) {
                 $progressBar->setMessage($fileMain['path'] . '/' . $fileMain['name'] . "\n");
@@ -262,8 +253,8 @@ class SimilarImagesTool extends Command
 
                 $progressBar2->advance();
 
-                $mainPathHash = \hash('sha3-256', $mainPath . $secondPath);
-                $secondPathHash = \hash('sha3-256', $secondPath . $mainPath);
+                $mainPathHash = "$mainPath;;;$secondPath";
+                $secondPathHash = "$secondPath;;;$mainPath";
 
                 if (
                     \in_array($secondPathHash, $checked)
@@ -282,8 +273,8 @@ class SimilarImagesTool extends Command
                     continue;
                 }
 
-                $founded[] = [
-                    'path' => $fileSecond,
+                $founded[$mainPath][] = [
+                    'path' => $secondPath,
                     'level' => $hammingDistance,
                 ];
             }
@@ -292,20 +283,11 @@ class SimilarImagesTool extends Command
 
             echo "\r";
             echo "\033[1F";
-
-            if (empty($founded)) {
-                continue;
-            }
-
-            $iterations[$index] = [
-                'main' => $fileMain,
-                'founded' => $founded
-            ];
         }
 
         $progressBar->finish();
 
-        return $iterations;
+        return $founded;
     }
 
     /**
@@ -365,8 +347,8 @@ class SimilarImagesTool extends Command
             $imageSize = getimagesize($main);
 
             $this->blueStyle->writeln(
-                "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>"
-                . "x<options=bold>{$imageSize[1]}</> <fg=green>$main</>"
+                "<fg=yellow>$size</> <options=bold>$imageSize[0]</>"
+                . "x<options=bold>$imageSize[1]</> <fg=green>$main</>"
             );
 
             foreach ($images as $founded) {
@@ -375,7 +357,7 @@ class SimilarImagesTool extends Command
                 $imageSize = getimagesize($founded['path']);
 
                 $this->blueStyle->writeln(
-                    "<fg=yellow>$size</> <options=bold>{$imageSize[0]}</>x<options=bold>{$imageSize[1]}</>"
+                    "<fg=yellow>$size</> <options=bold>$imageSize[0]</>x<options=bold>$imageSize[1]</>"
                     . " Level: <options=bold>{$founded['level']}</>; <fg=blue>{$founded['path']}</>"
                 );
             }
@@ -403,7 +385,7 @@ class SimilarImagesTool extends Command
 
             $renderList .= '<div style="margin: 10px; padding: 10px; border: 1px solid black">';
             $renderList .= "<img src='$encoded' width='400px'/>";
-            $renderList .= " $size {$imageSize[0]}x{$imageSize[1]} ";
+            $renderList .= " $size $imageSize[0]x$imageSize[1] ";
             $renderList .= " <a target='blank' href=\"$encoded\">$main</a><br/>";
 
             foreach ($images as $founded) {
@@ -414,7 +396,7 @@ class SimilarImagesTool extends Command
                 $imageSize = getimagesize($full);
 
                 $renderList .= "<img src='$encoded' width='400px'/>";
-                $renderList .= "$size {$imageSize[0]}x{$imageSize[1]} <span>Level: {$founded['level']}</span> ";
+                $renderList .= "$size $imageSize[0]x$imageSize[1] <span>Level: {$founded['level']}</span> ";
                 $renderList .= " <a target='blank' href=\"$encoded\">$full</a><br/>";
             }
 
@@ -455,8 +437,13 @@ class SimilarImagesTool extends Command
         $count = \count($fileList);
         $threadIdentical = 0;
 
-        $this->redis = new \Redis();
-        $this->redis->connect('127.0.0.1', 6378);
+        try {
+            $this->redis = $this->register->factory(\Redis::class);
+            $this->redis->connect('127.0.0.1', 6378);
+        } catch (\Throwable $exception) {
+            throw new \DomainException('Redis exception: ' . $exception->getMessage());
+        }
+
         $this->session = "dupimg-" . Uuid::uuid4()->toString();
 
         $this->blueStyle->infoMessage("Session: <fg=green>$this->session</>");
@@ -489,7 +476,6 @@ class SimilarImagesTool extends Command
         }
 
         $progressBar = null;
-        $this->blueStyle->infoMessage('Merge founded images.');
 
         if (!$this->input->getOption('identical')) {
             $this->blueStyle->infoMessage("Compare hashes.");
@@ -509,11 +495,11 @@ class SimilarImagesTool extends Command
                 throw new \DomainException('RegisterException: ' . $exception->getMessage());
             }
 
+            $this->blueStyle->infoMessage('Merge founded images.');
+
             $progressBar->setFormat($this->messageFormat);
             $progressBar->start($this->threads + $threadIdentical);
-        }
 
-        if (!$this->input->getOption('identical')) {
             for ($i = 0; $i < $this->threads; $i++) {
                 if ($this->input->getOption('progress-info')) {
                     $progressBar->setMessage("thread $i");
@@ -657,7 +643,9 @@ class SimilarImagesTool extends Command
     protected function createProcessesCompare(LoopInterface $loop): void
     {
         $count = $this->redis->lLen("$this->session-paths-compare");
-        $allChecks = $count * $count;
+        $allCompares = $count * $count;
+        $allChecks = (int)(\floor($allCompares / 2) - \floor($count / 2));
+
         $level = $this->input->getOption('level');
         $this->input->getOption('verbose') ? $verbose = 1 : $verbose = 0;
         $dir = __DIR__;
@@ -688,11 +676,13 @@ class SimilarImagesTool extends Command
     ): void {
         $progressList = [];
         $counter = (int)$this->input->getOption('thread');
+        $delay = 0;
 
         for ($thread = 0; $thread < $this->threads; $thread++) {
-            $first = new Process("$processCommand $thread");
+            $first = new Process("$processCommand $thread $delay");
             $first->start($loop);
             $self = $this;
+            $delay += 50;
 
             $first->stdout->on(
                 'data',
@@ -702,7 +692,7 @@ class SimilarImagesTool extends Command
                     if ($response && isset($response['status']['done'])) {
                         $sum = $self->redis->get("$self->session-$keyName");
                         $progressList[$thread] = "Thread <options=bold>$thread</> $type - {$response['status']['done']}";
-                        $progressList[$self->threads] = "Generated $type - $allChecks/$sum";
+                        $progressList[$self->threads] = "All $type - $allChecks/$sum";
 
                         $self->renderThreadInfo($progressList);
 
@@ -720,6 +710,11 @@ class SimilarImagesTool extends Command
 
                     $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
                     $sum = $self->redis->get("$self->session-$keyName");
+
+                    if ($type === 'compares' && $allChecks > $sum) {
+                        $sum = $allChecks - $self->redis->sCard("$self->session-errors");
+                    }
+
                     $progressList[$self->threads] = "All $type - $allChecks/$sum";
 
                     if ($counter === 0) {
@@ -738,9 +733,7 @@ class SimilarImagesTool extends Command
     protected function getUuid(): string
     {
         try {
-            $uuid5 = Uuid::uuid4();
-
-            return $uuid5->toString();
+            return Uuid::uuid4()->toString();
         } catch (\Exception | UnsatisfiedDependencyException $exception) {
             return \hash_file('sha3-256', \microtime(true));
         }
@@ -760,8 +753,7 @@ class SimilarImagesTool extends Command
             $message = $progressList[$i] ?? '';
             echo "\r";
 
-            /** @noinspection ReturnFalseInspection */
-            if (\strpos($message, 'Error') === 0) {
+            if (str_starts_with($message, 'Error')) {
                 $this->blueStyle->errorMessage($message);
             } else {
                 $this->blueStyle->infoMessage($message);

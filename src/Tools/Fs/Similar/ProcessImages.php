@@ -10,6 +10,7 @@ $level = $argv[1];
 $session = $argv[2];
 $verbose = $argv[3];
 $thread = $argv[4];
+$delay = $argv[5];
 $redis = null;
 
 try {
@@ -23,9 +24,12 @@ try {
     $redis->connect('127.0.0.1', 6378);
     $verboseContent = '';
 
+    usleep($delay * 1000);
+
     while ($mainPath = $redis->lPop("$session-paths-compare")) {
         $founded = [];
         $hashMain = $redis->hGet("$session-hashes", $mainPath);
+        $redis->hDel("$session-hashes", $mainPath);
 
         foreach ($redis->hgetAll("$session-hashes") as $secondPath => $secondHash) {
             $mainPathHash = "$mainPath;;;$secondPath";
@@ -40,7 +44,6 @@ try {
             if (
                 $redis->sIsMember("$session-checked", $secondPathHash)
                 || $redis->sIsMember("$session-checked", $mainPathHash)
-                || $mainPath === $secondPath
             ) {
                 echo json_encode(['status' => ['done' => $done . $verboseContent]], JSON_THROW_ON_ERROR, 512);
                 continue;
@@ -88,3 +91,5 @@ try {
     $redis?->sAdd("$session-errors", $exception->getMessage());
     echo "{\"status\":\"error\",\"message\": \"$message\"}";
 }
+
+usleep($delay * 1000);
