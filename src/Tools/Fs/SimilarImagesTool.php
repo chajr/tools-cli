@@ -22,7 +22,6 @@ use ToolsCli\Console\{
     Alias,
 };
 use Ramsey\Uuid\{
-    Exception\UnsatisfiedDependencyException,
     Uuid,
 };
 use BlueFilesystem\StaticObjects\{
@@ -724,18 +723,6 @@ class SimilarImagesTool extends Command
                     }
                 }
             );
-        }
-    }
-
-    /**
-     * @return string
-     */
-    protected function getUuid(): string
-    {
-        try {
-            return Uuid::uuid4()->toString();
-        } catch (\Exception | UnsatisfiedDependencyException $exception) {
-            return \hash_file('sha3-256', \microtime(true));
         }
     }
 

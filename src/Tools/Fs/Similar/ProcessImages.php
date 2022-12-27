@@ -56,6 +56,8 @@ try {
                 $hammingDistance = $editor->compareHashes($hashMain, $secondHash);
             } catch (Throwable $exception) {
                 $redis->sAdd("$session-errors", $exception->getMessage());
+                echo json_encode(['status' => ['done' => $done . $verboseContent]], JSON_THROW_ON_ERROR, 512);
+                continue;
             }
 
             if ($hammingDistance > $level) {

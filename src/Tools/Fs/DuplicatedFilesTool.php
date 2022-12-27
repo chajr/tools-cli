@@ -63,7 +63,7 @@ class DuplicatedFilesTool extends Command
     /**
      * @var string
      */
-    protected $messageFormat = ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%';
+    protected $messageFormat = '[ <fg=blue>INFO</> ]     %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%';
 
     /**
      * @var ProgressBar
@@ -74,6 +74,9 @@ class DuplicatedFilesTool extends Command
     protected $deleteSizeCounter = 0;
     protected $duplicatedFiles = 0;
     protected $duplicatedFilesSize = 0;
+    protected ?\Redis $redis;
+    protected string $session = '';
+    protected int $threads = 0;
 
     /**
      * @param string $name
@@ -229,6 +232,7 @@ class DuplicatedFilesTool extends Command
             $data = $this->useSingleProcess($fileList, $data, (int)$this->input->getOption('chunk'));
         }
 
+        $this->blueStyle->newLine();
         $this->blueStyle->infoMessage('Compare files.');
         $this->duplicationCheckStrategy($data);
 
@@ -259,22 +263,57 @@ class DuplicatedFilesTool extends Command
      */
     protected function useThreads(array $fileList, array $data, int $chunk): array
     {
-        $hashFiles = [];
-        $threads = $this->input->getOption('thread');
-        $chunkValue = \ceil(\count($fileList) / $threads);
+        $newData = [];
+        $this->threads = (int)$this->input->getOption('thread');
+        $count = \count($fileList);
 
-        if ($chunkValue > 0) {
-            $fileList = \array_chunk($fileList, $chunkValue);
+        try {
+            $this->redis = $this->register->factory(\Redis::class);
+            $this->redis->connect('127.0.0.1', 6378);
+        } catch (\Throwable $exception) {
+            throw new \DomainException('Redis exception: ' . $exception->getMessage());
+        }
+
+        $this->session = "dup-" . Uuid::uuid4()->toString();
+        $this->blueStyle->infoMessage("Session: <fg=green>$this->session</>");
+
+        foreach ($fileList as $path) {
+            $this->redis->rPush("$this->session-paths", $path);
         }
 
         $loop = Factory::create();
-
-        $this->createProcesses($fileList, $loop, $data, $hashFiles, $chunk);
+        $this->createProcesses($loop, $chunk, $count);
         $loop->run();
 
-        foreach ($hashFiles as $hasFile) {
-            Fs::delete($hasFile);
+        $errors = $this->redis->sMembers("$this->session-errors");
+        foreach ($errors as $error) {
+            $this->blueStyle->errorMessage($error);
         }
+
+        try {
+            $progressBar = $this->register->factory(ProgressBar::class, [$this->output]);
+        } catch (RegisterException $exception) {
+            throw new \DomainException('RegisterException: ' . $exception->getMessage());
+        }
+
+        $this->blueStyle->infoMessage('Merge hashes.');
+
+        $progressBar->setFormat($this->messageFormat);
+        $progressBar->start($this->threads);
+
+        for ($i = 0; $i < $this->threads; $i++) {
+            if ($this->input->getOption('progress-info')) {
+                $progressBar->setMessage("thread $i");
+            }
+            $progressBar->advance();
+
+            $val = $this->redis->hGet("$this->session-hashes", "thread-$i");
+            if ($val) {
+                $newData = \array_merge_recursive(\json_decode($val, true), $newData);
+            }
+        }
+
+        $data['hashes'] = $newData;
 
         return $data;
     }
@@ -394,65 +433,53 @@ class DuplicatedFilesTool extends Command
      * @return void
      */
     protected function createProcesses(
-        array $processArrays,
         LoopInterface $loop,
-        array &$data,
-        array &$hashFiles,
-        int $chunk
+        int $chunk,
+        int $allChecks
     ): void {
         $progressList = [];
-        $counter = $this->input->getOption('thread');
+        $delay = 0;
+        $counter = $this->threads;
 
-        foreach ($processArrays as $thread => $processArray) {
-            $hashes = \json_encode($processArray, JSON_THROW_ON_ERROR, 512);
-
-            $uuid = $this->getUuid();
-            $path = self::TMP_DUMP_DIR . "$uuid.json";
-            $hashFiles[] = $path;
-            /** @noinspection ReturnFalseInspection */
-            \file_put_contents($path, $hashes);
-
+        for ($thread = 0; $thread < $this->threads; $thread++) {
             $dir = __DIR__;
-            $first = new Process("php $dir/Duplicated/Hash.php $path $chunk");
+            $first = new Process("php $dir/Duplicated/Hash.php $this->session $chunk $thread $delay");
             $first->start($loop);
             $self = $this;
+            $delay += 50;
 
-            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self) {
+            $first->stdout->on('data', static function ($chunk) use ($thread, &$progressList, $self, $allChecks) {
                 $response = \json_decode($chunk, true);
-                if ($response && isset($response['status']['all'], $response['status']['left'])) {
-                    $status = $response['status'];
-                    $progressList[$thread] = "Thread $thread - {$status['all']}/{$status['left']}";
+                if ($response && isset($response['status']['done'])) {
+                    $sum = $self->redis->get("$self->session-hashes-processed");
+                    $progressList[$thread] = "Thread <options=bold>$thread</> hashes - {$response['status']['done']}";
+                    $progressList[$self->threads] = "All hashes - $allChecks/$sum";
 
                     $self->renderThreadInfo($progressList);
 
-                    for ($i = 0; $i < $self->input->getOption('thread') - 1; $i++) {
+                    for ($i = 0; $i < $self->threads; $i++) {
                         echo Interactive::MOD_LINE_CHAR;
                     }
                 }
             });
 
-            $first->on('exit', static function ($code) use (&$data, $path, &$counter, $self, &$progressList, $thread) {
-                $counter--;
-
-                try {
-                    $dataPipe = pipe($path)
-                        ->fileGetContents
-                        ->trim
-                        ->jsonDecode(_, true, 512, JSON_THROW_ON_ERROR);
-                    $data = \array_merge_recursive($data, $dataPipe());
-                } catch (\Throwable $exception) {
-                    $progressList[$thread] =
-                        "Error {$exception->getMessage()} - {$exception->getFile()}:{$exception->getLine()}";
+            $first->on(
+                'exit',
+                static function ($code) use (&$counter, $self, &$progressList, $thread, $allChecks) {
+                    $counter--;
+    
+                    $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
+                    $sum = $self->redis->get("$self->session-hashes-processed");
+    
+                    $progressList[$self->threads] = "All hashes - $allChecks/$sum";
+    
+                    if ($counter === 0) {
+                        $self->renderThreadInfo($progressList);
+    
+                        $self->blueStyle->newLine();
+                    }
                 }
-
-                $progressList[$thread] = "Process <options=bold>$thread</> exited with code <info>$code</>";
-
-                if ($counter === 0) {
-                    $self->renderThreadInfo($progressList);
-
-                    $self->blueStyle->newLine();
-                }
-            });
+            );
         }
     }
 
@@ -462,7 +489,7 @@ class DuplicatedFilesTool extends Command
      */
     protected function renderThreadInfo(array $progressList): void
     {
-        for ($i = 0; $i < $this->input->getOption('thread'); $i++) {
+        for ($i = 0; $i < $this->input->getOption('thread') + 1; $i++) {
             if ($i > 0) {
                 echo "\n";
             }
@@ -470,8 +497,7 @@ class DuplicatedFilesTool extends Command
             $message = $progressList[$i] ?? '';
             echo "\r";
 
-            /** @noinspection ReturnFalseInspection */
-            if (\strpos($message, 'Error') === 0) {
+            if (str_starts_with($message, 'Error')) {
                 $this->blueStyle->errorMessage($message);
             } else {
                 $this->blueStyle->infoMessage($message);
@@ -536,7 +562,7 @@ class DuplicatedFilesTool extends Command
             if ($this->input->getOption('check-by-name')) {
                 /** @var Name $checkByName */
                 $checkByName = $this->register->factory(Name::class);
-                $hashes = $checkByName->checkByName($names, $hashes, $this->input->getOption('check-by-name'));
+                $hashes = $checkByName->checkByName($names, $hashes, (int)$this->input->getOption('check-by-name'));
             }
 
             /** @var Strategy $strategy */
