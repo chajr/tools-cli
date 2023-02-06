@@ -50,7 +50,7 @@ class HistoryTool extends Command
             'grep',
             'g',
             InputArgument::OPTIONAL,
-            'Display only matching commands.'
+            'Display only matching commands. Use # as pattern bounds.'
         );
 
         $this->addOption(
@@ -135,17 +135,22 @@ class HistoryTool extends Command
             $lineCount = $index + 1;
         }
 
+        $fullCommand = '';
+
         foreach ($rows as $row) {
             try {
                 $matches = [];
                 $expression = \preg_split('#(:[\d]+;)#', $row, -1, PREG_SPLIT_DELIM_CAPTURE);
 
                 if ($this->previousLineRendered && \count($expression) === 1 && $expression[0] !== '') {
-                    $style->writeln(\preg_replace('#\\\\\\\$#', '\\', $expression[0]));
+                    if (!$this->dontDisplay) {
+                        $style->writeln(\preg_replace('#\\\\\\\$#', '\\', $expression[0]));
+                    }
                     $this->previousLineRendered = true;
                     $this->previousLine .= ' ' . $expression[0];
                     continue;
                 }
+                $this->dontDisplay = false;
 
                 $dateTimeExpression = \preg_match('#^: \d+#', \reset($expression), $matches);
 
@@ -159,6 +164,10 @@ class HistoryTool extends Command
                 \array_shift($expression);
                 \array_shift($expression);
                 $expression = \implode('', $expression);
+
+                if ($expression === '') {
+                    continue;
+                }
 
                 if ($input->getOption('date')) {
                     $dates = \explode(':', $input->getOption('date'));
@@ -184,19 +193,38 @@ class HistoryTool extends Command
                 }
 
                 if ($input->getOption('grep')) {
-                    $match = \preg_match('#' . $input->getOption('grep') . '#', $expression, $matches);
+                    if ($this->previousLine) {
+                        $fullCommand .= $this->previousLine;
+                    }
 
-                    if ($match) {
-                        foreach ($matches as $index => $matchPart) {
-                            $color = 'blue';
-                            if ($index === 0) {
-                                $color = 'red';
+                    $fullCommand .= $expression;
+
+                    if ($fullCommand !== '') {
+                        $match = \preg_match('#' . $input->getOption('grep') . '#', $fullCommand, $matches);
+
+                        if ($match) {
+                            foreach ($matches as $index => $matchPart) {
+                                $color = 'blue';
+                                if ($index === 0) {
+                                    $color = 'red';
+                                }
+                                $expression = \str_replace($matchPart, "<fg=$color>$matchPart</>", $fullCommand);
                             }
-                            $expression = \str_replace($matchPart, "<fg=$color>$matchPart</>", $expression);
+                        } else {
+                            if (\preg_match('#\\\\\\\$#', $fullCommand)) {
+                                $this->previousLineRendered = true;
+                                $this->dontDisplay = true;
+                                $this->previousLine = $expression;
+                                continue;
+                            }
+
+                            $fullCommand = '';
+                            $this->previousLine = null;
+                            $this->previousLineRendered = false;
+                            continue;
                         }
-                    } else {
-                        $this->previousLineRendered = false;
-                        continue;
+
+                        $fullCommand = '';
                     }
                 }
 
