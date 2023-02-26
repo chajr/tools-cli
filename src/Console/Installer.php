@@ -28,7 +28,8 @@ class Installer extends Command
     {
         $fileSystem = new Filesystem;
 
-        $fileSystem->copy('etc/', '~/.config/tools-cli/etc');
+        $fileSystem->mkdir('/etc/toolscli/');
+        $fileSystem->copy('etc/*', '/etc/toolscli/');
         $fileSystem->mkdir('~/.config/tools-cli/storage');
         $fileSystem->mkdir('~/.config/tools-cli/log');
     }

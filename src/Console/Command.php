@@ -9,7 +9,7 @@ class Command extends BaseCommand
     /**
      * @var Alias
      */
-    protected $alias;
+    protected Alias $alias;
 
     /**
      * @var string
@@ -36,7 +36,7 @@ class Command extends BaseCommand
     /**
      * @return null|string
      */
-    protected function checkAlias() : ?string
+    protected function checkAlias(): ?string
     {
         if (\is_null($this->alias)) {
             return null;
@@ -48,7 +48,7 @@ class Command extends BaseCommand
     /**
      * @return null|string
      */
-    protected function getAlias() : ?string
+    protected function getAlias(): ?string
     {
         $alias = '';
 
@@ -66,10 +66,16 @@ class Command extends BaseCommand
      */
     protected function readConfig(string $configJsonName): array
     {
+        $configPath = "/etc/toolscli/$configJsonName.json";
+        $varConfigName = \getenv('TOOLS_CLI_CONFIG_' . $configJsonName);
+
+        if ($varConfigName) {
+            $configPath = $varConfigName;
+        }
+
         try {
-            $baseConfig = file_get_contents(__DIR__ . "/../../etc/$configJsonName.json");
-            return \json_decode($baseConfig, true);
-            //@todo add read from main /etc dir
+            $baseConfig = \file_get_contents($configPath);
+            return \json_decode($baseConfig, true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $exception) {
             throw new \InvalidArgumentException($exception);
         }
