@@ -8,6 +8,7 @@ use Symfony\Component\Console\{
     Input\InputInterface,
     Output\OutputInterface,
     Input\InputArgument,
+    Input\InputOption,
 };
 use ToolsCli\Console\Display\Style;
 use ToolsCli\Console\Command;
@@ -49,7 +50,7 @@ class HistoryTool extends Command
         $this->addOption(
             'grep',
             'g',
-            InputArgument::OPTIONAL,
+            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED,
             'Display only matching commands. Use # as pattern bounds.'
         );
 
@@ -200,30 +201,37 @@ class HistoryTool extends Command
                     $fullCommand .= $expression;
 
                     if ($fullCommand !== '') {
-                        $match = \preg_match('#' . $input->getOption('grep') . '#', $fullCommand, $matches);
+                        foreach ($input->getOption('grep') as $pattern) {
+                            $match = \preg_match('#' . $pattern . '#', $fullCommand, $matches);
 
-                        if ($match) {
-                            foreach ($matches as $index => $matchPart) {
-                                $color = 'blue';
-                                if ($index === 0) {
-                                    $color = 'red';
+                            if ($match) {
+                                foreach ($matches as $index => $matchPart) {
+                                    $color = 'blue';
+                                    if ($index === 0) {
+                                        $color = 'red';
+                                    }
+
+                                    if ($expression !== '') {
+                                        $expression = \str_replace($matchPart, "<fg=$color>$matchPart</>", $expression);
+                                    } else {
+                                        $expression = \str_replace($matchPart, "<fg=$color>$matchPart</>", $fullCommand);
+                                    }
                                 }
-                                $expression = \str_replace($matchPart, "<fg=$color>$matchPart</>", $fullCommand);
-                            }
-                        } else {
-                            if (\preg_match('#\\\\\\\$#', $fullCommand)) {
-                                $this->previousLineRendered = true;
-                                $this->dontDisplay = true;
-                                $this->previousLine = $expression;
-                                continue;
+                            } else {
+                                if (\preg_match('#\\\\\\\$#', $fullCommand)) {
+                                    $this->previousLineRendered = true;
+                                    $this->dontDisplay = true;
+                                    $this->previousLine = $expression;
+                                    continue 2;
+                                }
+
+                                $fullCommand = '';
+                                $this->previousLine = null;
+                                $this->previousLineRendered = false;
+                                continue 2;
                             }
 
-                            $fullCommand = '';
-                            $this->previousLine = null;
-                            $this->previousLineRendered = false;
-                            continue;
                         }
-
                         $fullCommand = '';
                     }
                 }
