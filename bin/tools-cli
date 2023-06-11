@@ -2,7 +2,13 @@
 <?php
 
 ini_set('error_reporting', E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+
+$isPhar = Phar::running();
 $mainDir = __DIR__ . '/../';
+
+if ($isPhar) {
+    $mainDir = '';
+}
 
 require_once $mainDir . 'vendor/autoload.php';
 
