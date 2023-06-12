@@ -55,7 +55,7 @@ class Move implements Action
             }
 
             if (!Structure::exist($configList['params']['destination'])) {
-                throw new \InvalidArgumentException('Destination not found: ' . $path);
+                throw new \InvalidArgumentException('Destination not found: ' . $configList['params']['destination']);
             }
 
             $out = Fs::move(
