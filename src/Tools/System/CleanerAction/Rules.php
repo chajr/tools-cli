@@ -175,6 +175,6 @@ class Rules implements RulesInterface
      */
     protected function extensionRule($rule): bool
     {
-        return \in_array($this->fileInfo->getExtension(), $rule, true);
+        return \in_array(\strtolower($this->fileInfo->getExtension()), $rule, true);
     }
 }
