@@ -26,7 +26,7 @@ class Interactive implements Strategy
 
     protected $deleteCounter = 0;
     protected $deleteSizeCounter = 0;
-    protected $duplicatedFiles = 0;
+    protected $duplicatedFiles = 0; 
     protected $duplicatedFilesSize = 0;
 
     /**
@@ -76,9 +76,10 @@ class Interactive implements Strategy
     protected function interactive(array $hash, MultiSelect $multiselect) : self
     {
         $hashWithSize = [];
+        \natcasesort($hash);
 
         foreach ($hash as $file) {
-            $size = filesize($file);
+            $size = \filesize($file);
             $this->duplicatedFilesSize += $size;
 
             $formattedSize = Formats::dataSize($size);
@@ -104,13 +105,13 @@ class Interactive implements Strategy
     {
         foreach (array_keys($selected) as $idToDelete) {
             //delete process
-            $this->deleteSizeCounter += filesize($hash[$idToDelete]);
+            $this->deleteSizeCounter += \filesize($hash[$idToDelete]);
             $this->blueStyle->infoMessage('Removing: ' . $hash[$idToDelete]);
             $out = Fs::delete($hash[$idToDelete]);
 
             echo self::MOD_LINE_CHAR;
 
-            if (reset($out)) {
+            if (\reset($out)) {
                 $this->blueStyle->okMessage('Removed success: ' . $hash[$idToDelete]);
                 $this->deleteCounter++;
             } else {
