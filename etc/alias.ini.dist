@@ -8,3 +8,5 @@ inf=info:info
 ntd=fs:name-to-date
 rd=fs:random-file
 dup=fs:duplicated
+[Utils]
+mp3=utils:music-downloader
