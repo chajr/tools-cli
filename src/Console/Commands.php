@@ -12,6 +12,7 @@ use BlueRegister\RegisterException;
 use BlueCache\SimpleCache;
 use UnexpectedValueException;
 use DateInterval;
+use BlueDuplicateDetector\Command\DuplicatedFilesCommand;
 
 class Commands extends Container
 {
@@ -72,6 +73,7 @@ class Commands extends Container
         }
 
         $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
+        $this->set(DuplicatedFilesCommand::class, new DuplicatedFilesCommand('fs:duplicated', [], (string)\getcwd()));
 
         //@todo set default command
 //        $this->set('default_name', 'helper');
@@ -101,6 +103,10 @@ class Commands extends Container
         }
 
         foreach ($namespaces['file_list'] as $commandFile) {
+            if (!\is_file($commandFile)) {
+                continue;
+            }
+
             $namespace = $namespaces['list'][$commandFile];
             $object = $this->registerCommandTool($namespace);
 
