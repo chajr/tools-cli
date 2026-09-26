@@ -103,11 +103,12 @@ class Commands extends Container
         }
 
         foreach ($namespaces['file_list'] as $commandFile) {
-            if (!\is_file($commandFile)) {
+            $namespace = $namespaces['list'][$commandFile];
+
+            if (!\class_exists($namespace)) {
                 continue;
             }
 
-            $namespace = $namespaces['list'][$commandFile];
             $object = $this->registerCommandTool($namespace);
 
             if ($object !== null) {
