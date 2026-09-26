@@ -201,11 +201,13 @@ class Commands extends Container
      */
     protected function registerCommandTool(string $namespace): ?Command
     {
+        // Symfony 7.4 Command::__construct(?string $name, ?callable $code) - tools without own constructor get name only
+        $args = (new \ReflectionMethod($namespace, '__construct'))->getDeclaringClass()->getName() === Command::class
+            ? [$namespace]
+            : [$namespace, $this->alias, $this->register];
+
         try {
-            return $this->register->factory(
-                $namespace,
-                [$namespace, $this->alias, $this->register]
-            );
+            return $this->register->factory($namespace, $args);
         } catch (RegisterException $exception) {
             (new ConsoleOutput())->writeln('<error>' . $exception->getMessage() . '</error>');
         }

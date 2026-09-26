@@ -14,7 +14,7 @@ class VideoHexFixerTool extends Command
     public function __construct(string $name, Alias $alias, Register $register)
     {
         $this->register= $register;
-        parent::__construct($name, $alias);
+        parent::__construct($name);
     }
 
     protected function configure() : void
