@@ -36,6 +36,7 @@ class Rules implements RulesInterface
         'time' => false,
         'size' => false,
         'extension' => false,
+        'exception' => false,
     ];
 
     /**
@@ -176,5 +177,11 @@ class Rules implements RulesInterface
     protected function extensionRule($rule): bool
     {
         return \in_array(\strtolower($this->fileInfo->getExtension()), $rule, true);
+    }
+
+    protected function exception($rule): bool
+    {
+        
+        return false;
     }
 }

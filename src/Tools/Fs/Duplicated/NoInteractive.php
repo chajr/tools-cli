@@ -32,12 +32,12 @@ class NoInteractive implements Strategy
     }
 
     /**
-     * @param array $hash
+     * @param array $hashes
      * @return $this
      */
-    public function checkByHash(array $hash): Strategy
+    public function checkByHash(array $hashes): Strategy
     {
-        foreach ($hash as $file) {
+        foreach ($hashes as $file) {
             $size = null;
 
             if (!$this->input->getOption('list-only')) {

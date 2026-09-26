@@ -26,7 +26,7 @@ class Interactive implements Strategy
 
     protected $deleteCounter = 0;
     protected $deleteSizeCounter = 0;
-    protected $duplicatedFiles = 0; 
+    protected $duplicatedFiles = 0;
     protected $duplicatedFilesSize = 0;
 
     /**
@@ -40,15 +40,15 @@ class Interactive implements Strategy
     }
 
     /**
-     * @param array $hash
+     * @param array $hashes
      * @return Interactive
      * @throws \Exception
      */
-    public function checkByHash(array $hash) : Strategy
+    public function checkByHash(array $hashes): Strategy
     {
         $this->blueStyle->newLine(2);
 
-        $this->interactive($hash, $this->multiselect);
+        $this->interactive($hashes, $this->multiselect);
 
         $this->blueStyle->newLine();
 

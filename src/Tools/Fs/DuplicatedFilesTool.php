@@ -180,6 +180,13 @@ class DuplicatedFilesTool extends Command
             null,
             'Show only list of duplicated files with their paths.'
         );
+
+        $this->addOption(
+            'depth',
+            'd',
+            null,
+            'S'
+        );
     }
 
     /**
@@ -269,7 +276,7 @@ class DuplicatedFilesTool extends Command
 
         try {
             $this->redis = $this->register->factory(\Redis::class);
-            $this->redis->connect('127.0.0.1', 6378);
+            $this->redis->connect('127.0.0.1', 6379);
         } catch (\Throwable $exception) {
             throw new \DomainException('Redis exception: ' . $exception->getMessage());
         }
