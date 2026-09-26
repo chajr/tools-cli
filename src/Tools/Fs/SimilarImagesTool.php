@@ -152,7 +152,7 @@ class SimilarImagesTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
@@ -192,7 +192,7 @@ class SimilarImagesTool extends Command
 
         if (empty($data)) {
             $this->blueStyle->okMessage('No similar images founded on given level.');
-            return;
+            return self::SUCCESS;
         }
 
         $this->blueStyle->newLine();
@@ -203,6 +203,8 @@ class SimilarImagesTool extends Command
         } else {
             $this->html($data);
         }
+
+        return self::SUCCESS;
     }
 
     /**

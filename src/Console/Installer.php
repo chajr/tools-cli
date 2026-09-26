@@ -24,7 +24,7 @@ class Installer extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $fileSystem = new Filesystem;
 
@@ -32,5 +32,7 @@ class Installer extends Command
         $fileSystem->copy('etc/*', '/etc/toolscli/');
         $fileSystem->mkdir('~/.config/tools-cli/storage');
         $fileSystem->mkdir('~/.config/tools-cli/log');
+
+        return self::SUCCESS;
     }
 }

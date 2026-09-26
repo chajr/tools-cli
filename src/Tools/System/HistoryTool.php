@@ -103,7 +103,7 @@ class HistoryTool extends Command
      * @return void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $historyFile = getenv('TOOLS_CLI_HISTORY_FILE');
 
@@ -275,6 +275,8 @@ class HistoryTool extends Command
         foreach ($errors as $line => $error) {
             $style->writeln("<error>Line: $line; " . $error->getMessage() . '</error>');
         }
+
+        return self::SUCCESS;
     }
 
     /**

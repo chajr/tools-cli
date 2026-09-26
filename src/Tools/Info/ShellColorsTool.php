@@ -23,7 +23,7 @@ class ShellColorsTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output) : void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         //https://en.wikipedia.org/wiki/ANSI_escape_code
 
@@ -57,5 +57,7 @@ class ShellColorsTool extends Command
                 echo "\n";
             }
         }
+
+        return self::SUCCESS;
     }
 }

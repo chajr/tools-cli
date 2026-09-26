@@ -73,7 +73,7 @@ class RandomFileTool extends Command
      * @throws \ErrorException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $allFiles = [];
         $storedFiles = [];
@@ -143,6 +143,8 @@ class RandomFileTool extends Command
         }
 
         echo '"' . $randFile . '"';
+
+        return self::SUCCESS;
     }
 
     /**

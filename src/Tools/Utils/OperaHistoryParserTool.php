@@ -29,7 +29,7 @@ class OperaHistoryParserTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $content = file_get_contents('session');
         $find = [];
@@ -41,5 +41,7 @@ class OperaHistoryParserTool extends Command
             $output->writeln($found);
             $output->writeln('============================================');
         }
+
+        return self::SUCCESS;
     }
 }

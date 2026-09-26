@@ -67,7 +67,7 @@ class WorkspaceFixTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($output->isVerbose()) {
             try {
@@ -132,7 +132,7 @@ class WorkspaceFixTool extends Command
                 $output->writeln($message);
             }
 
-            return;
+            return self::SUCCESS;
         }
 
         if ($output->isVerbose()) {
@@ -146,6 +146,8 @@ class WorkspaceFixTool extends Command
         }
 
         $this->convertAndSave($jsonData, $path, $output->isVerbose());
+
+        return self::SUCCESS;
     }
 
     /**

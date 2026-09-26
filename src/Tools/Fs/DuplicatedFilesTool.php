@@ -196,7 +196,7 @@ class DuplicatedFilesTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
@@ -260,6 +260,8 @@ class DuplicatedFilesTool extends Command
             'Duplicated files size: <info>' . Formats::dataSize($this->duplicatedFilesSize) . '</>'
         );
         $this->blueStyle->newLine();
+
+        return self::SUCCESS;
     }
 
     /**

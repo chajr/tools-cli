@@ -63,7 +63,7 @@ class HashAlgosTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -93,5 +93,7 @@ class HashAlgosTool extends Command
             $this->blueStyle->infoMessage("$diff - $alg - $hashLen");
 //            $this->blueStyle->writeln("$diff - $alg - $hashLen");
         }
+
+        return self::SUCCESS;
     }
 }

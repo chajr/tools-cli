@@ -131,7 +131,7 @@ class IfExistsTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
@@ -188,6 +188,8 @@ class IfExistsTool extends Command
 //        $this->blueStyle->writeln('Duplicated files: ' . $this->duplicatedFiles);
 //        $this->blueStyle->writeln('Duplicated files size: ' . Formats::dataSize($this->duplicatedFilesSize));
 //        $this->blueStyle->newLine();
+
+        return self::SUCCESS;
     }
 
     /**

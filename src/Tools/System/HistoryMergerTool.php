@@ -33,7 +33,7 @@ class HistoryMergerTool extends Command
      * @return void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $filesContent = [];
         $commandIndex = 0;
@@ -91,6 +91,8 @@ class HistoryMergerTool extends Command
         }
 
         echo "done";
+
+        return self::SUCCESS;
     }
 
     /**

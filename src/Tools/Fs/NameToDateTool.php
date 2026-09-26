@@ -121,7 +121,7 @@ class NameToDateTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output) : void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->output = $output;
         $this->style = new Style($input, $output, $this);
@@ -263,6 +263,8 @@ class NameToDateTool extends Command
         }
 
         $this->style->newLine();
+
+        return self::SUCCESS;
     }
 
     /**

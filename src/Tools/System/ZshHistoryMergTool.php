@@ -71,7 +71,7 @@ class ZshHistoryMergTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -100,7 +100,7 @@ class ZshHistoryMergTool extends Command
 
         if (empty($history)) {
             $this->blueStyle->errorMessage('History is empty ');
-            return;
+            return self::SUCCESS;
         }
 
         $this->blueStyle->infoMessage('Processed lines: ' . \count($list));
@@ -109,10 +109,12 @@ class ZshHistoryMergTool extends Command
             \file_put_contents($input->getArgument('output'), $history);
         } catch (\Throwable $exception) {
             $this->blueStyle->errorMessage('Error: save file fail: ' . $exception->getMessage());
-            return;
+            return self::SUCCESS;
         }
 
         $this->blueStyle->success('Merged history file saved.');
+
+        return self::SUCCESS;
     }
 
     /**

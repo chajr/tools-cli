@@ -21,8 +21,9 @@ class PercentTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
+        return self::SUCCESS;
     }
 }

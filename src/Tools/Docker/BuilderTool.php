@@ -58,7 +58,7 @@ class BuilderTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -67,6 +67,6 @@ class BuilderTool extends Command
             throw new \UnexpectedValueException('RegisterException: ' . $exception->getMessage());
         }
 
-
+        return self::SUCCESS;
     }
 }
