@@ -12,6 +12,7 @@ use BlueRegister\RegisterException;
 use BlueCache\SimpleCache;
 use UnexpectedValueException;
 use DateInterval;
+use BlueDuplicateDetector\Command\DuplicatedFilesCommand;
 
 class Commands extends Container
 {
@@ -72,6 +73,7 @@ class Commands extends Container
         }
 
         $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
+        $this->set(DuplicatedFilesCommand::class, new DuplicatedFilesCommand('fs:duplicated', [], (string)\getcwd()));
 
         //@todo set default command
 //        $this->set('default_name', 'helper');
@@ -102,6 +104,11 @@ class Commands extends Container
 
         foreach ($namespaces['file_list'] as $commandFile) {
             $namespace = $namespaces['list'][$commandFile];
+
+            if (!\class_exists($namespace)) {
+                continue;
+            }
+
             $object = $this->registerCommandTool($namespace);
 
             if ($object !== null) {
@@ -195,11 +202,13 @@ class Commands extends Container
      */
     protected function registerCommandTool(string $namespace): ?Command
     {
+        // Symfony 7.4 Command::__construct(?string $name, ?callable $code) - tools without own constructor get name only
+        $args = (new \ReflectionMethod($namespace, '__construct'))->getDeclaringClass()->getName() === Command::class
+            ? [$namespace]
+            : [$namespace, $this->alias, $this->register];
+
         try {
-            return $this->register->factory(
-                $namespace,
-                [$namespace, $this->alias, $this->register]
-            );
+            return $this->register->factory($namespace, $args);
         } catch (RegisterException $exception) {
             (new ConsoleOutput())->writeln('<error>' . $exception->getMessage() . '</error>');
         }

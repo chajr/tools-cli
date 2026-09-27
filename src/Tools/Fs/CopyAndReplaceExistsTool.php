@@ -136,7 +136,7 @@ class CopyAndReplaceExistsTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
@@ -260,5 +260,7 @@ class CopyAndReplaceExistsTool extends Command
 
             $this->blueStyle->newLine();
         }
+
+        return self::SUCCESS;
     }
 }

@@ -123,7 +123,7 @@ class MusicDownloaderTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->formatter = $this->register->factory(FormatterHelper::class);
@@ -189,6 +189,8 @@ class MusicDownloaderTool extends Command
         }
 
         $this->blueStyle->okMessage("Done $downloadCount downloads of $allDownloads.");
+
+        return self::SUCCESS;
     }
 
     /**

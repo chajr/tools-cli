@@ -93,7 +93,7 @@ class WallhavenSorterTool extends Command
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($input->getOption('favorites')) {
             $this->updateFavorites();
@@ -122,6 +122,8 @@ class WallhavenSorterTool extends Command
          * - wall_tags (wall_id, tag_id)
          * - tag_alias (tag_id, alias_id)
          */
+
+        return self::SUCCESS;
     }
 
     protected function updateFavorites(): void

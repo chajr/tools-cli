@@ -14,7 +14,7 @@ class VideoHexFixerTool extends Command
     public function __construct(string $name, Alias $alias, Register $register)
     {
         $this->register= $register;
-        parent::__construct($name, $alias);
+        parent::__construct($name);
     }
 
     protected function configure() : void
@@ -49,7 +49,7 @@ class VideoHexFixerTool extends Command
      * @return int|null|void
      * @throws \InvalidArgumentException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         //read video file$fileErr
         //search hex occurrence
@@ -130,5 +130,7 @@ class VideoHexFixerTool extends Command
         echo "i: $i\n";
         echo "date len: " . strlen($data);
         echo PHP_EOL;
+
+        return self::SUCCESS;
     }
 }
