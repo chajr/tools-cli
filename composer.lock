@@ -236,16 +236,16 @@
         },
         {
             "name": "bluetree-service/duplicate-detector-lib",
-            "version": "0.1.1.0",
+            "version": "0.1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/duplicate-detector-lib.git",
-                "reference": "5d683b8d93fc10230b59327126428797486ed5ee"
+                "reference": "dbf28a7f655d4252fdf1c849fff853dc8cc794fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/duplicate-detector-lib/zipball/5d683b8d93fc10230b59327126428797486ed5ee",
-                "reference": "5d683b8d93fc10230b59327126428797486ed5ee",
+                "url": "https://api.github.com/repos/bluetree-service/duplicate-detector-lib/zipball/dbf28a7f655d4252fdf1c849fff853dc8cc794fd",
+                "reference": "dbf28a7f655d4252fdf1c849fff853dc8cc794fd",
                 "shasum": ""
             },
             "require": {
@@ -293,9 +293,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bluetree-service/duplicate-detector-lib/issues",
-                "source": "https://github.com/bluetree-service/duplicate-detector-lib/tree/0.1.1.0"
+                "source": "https://github.com/bluetree-service/duplicate-detector-lib/tree/0.1.2.0"
             },
-            "time": "2026-09-27T17:22:12+00:00"
+            "time": "2026-09-27T20:10:49+00:00"
         },
         {
             "name": "bluetree-service/event",
