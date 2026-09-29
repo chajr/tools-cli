@@ -62,19 +62,21 @@ class Command extends BaseCommand
 
     /**
      * @param string $configJsonName
+     * @return string /etc/toolscli/<name>.json or path from env TOOLS_CLI_CONFIG_<name>
+     */
+    public static function configPath(string $configJsonName): string
+    {
+        return \getenv('TOOLS_CLI_CONFIG_' . $configJsonName) ?: "/etc/toolscli/$configJsonName.json";
+    }
+
+    /**
+     * @param string $configJsonName
      * @return array
      */
-    protected function readConfig(string $configJsonName): array
+    public static function readConfig(string $configJsonName): array
     {
-        $configPath = "/etc/toolscli/$configJsonName.json";
-        $varConfigName = \getenv('TOOLS_CLI_CONFIG_' . $configJsonName);
-
-        if ($varConfigName) {
-            $configPath = $varConfigName;
-        }
-
         try {
-            $baseConfig = \file_get_contents($configPath);
+            $baseConfig = \file_get_contents(self::configPath($configJsonName));
             return \json_decode($baseConfig, true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $exception) {
             throw new \InvalidArgumentException($exception);

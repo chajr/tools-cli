@@ -11,3 +11,4 @@ etc/alias.ini
 etc/wallhaven.json
 myreport/
 .superpowers
+etc/redis.json

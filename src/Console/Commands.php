@@ -13,6 +13,7 @@ use BlueCache\SimpleCache;
 use UnexpectedValueException;
 use DateInterval;
 use BlueDuplicateDetector\Command\DuplicatedFilesCommand;
+use ToolsCli\Console\Command as ToolCommand;
 
 class Commands extends Container
 {
@@ -73,7 +74,12 @@ class Commands extends Container
         }
 
         $this->set(DefaultCommand::class, $this->registerCommandTool(DefaultCommand::class));
-        $this->set(DuplicatedFilesCommand::class, new DuplicatedFilesCommand('fs:duplicated', [], (string)\getcwd()));
+        // no redis.json = default 127.0.0.1:6379 without password
+        $redis = \is_file(ToolCommand::configPath('redis')) ? ToolCommand::readConfig('redis') : [];
+        $this->set(
+            DuplicatedFilesCommand::class,
+            new DuplicatedFilesCommand('fs:duplicated', [], (string)\getcwd(), $redis)
+        );
 
         //@todo set default command
 //        $this->set('default_name', 'helper');
