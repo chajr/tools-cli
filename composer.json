@@ -27,7 +27,7 @@
         "bluetree-service/symfony-console-style": "^0.7",
         "bluetree-service/benchmark": "^0.6",
         "bluetree-service/cache": "^0.5",
-        "bluetree-service/duplicate-detector-lib": "^0.4",
+        "bluetree-service/duplicate-detector-lib": "^0.5",
         "mikehaertl/php-shellcommand": "^1.7",
         "spatie/array-to-xml": "^3.4",
         "react/child-process": "^0.6.6",
