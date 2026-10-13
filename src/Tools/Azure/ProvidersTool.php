@@ -46,6 +46,10 @@ class ProvidersTool extends Command
         $locked = $this->registeredKeys(\array_values($states));
         $selected = $this->select($style, $rows, [], $locked);
 
+        if ($selected === null) {
+            return self::SUCCESS;
+        }
+
         return $this->register($style, $id, $this->namespaces($namespaces, $selected, $locked));
     }
 
@@ -64,6 +68,20 @@ class ProvidersTool extends Command
     protected function namespaces(array $namespaces, array $selected, array $locked): array
     {
         return \array_values(\array_intersect_key($namespaces, \array_diff_key($selected, \array_flip($locked))));
+    }
+
+    protected function progressBar(int $done, int $total, int $width = 40): string
+    {
+        $filled = (int)\round($width * $done / $total);
+
+        return \sprintf(
+            ' <info>%s</info><fg=gray>%s</> %d/%d registered, %d left',
+            \str_repeat('█', $filled),
+            \str_repeat('░', $width - $filled),
+            $done,
+            $total,
+            $total - $done
+        );
     }
 
     /**
@@ -87,13 +105,13 @@ class ProvidersTool extends Command
     /**
      * @return array [namespace => registrationState], sorted by namespace
      */
-    protected function states(string $subscriptionId): array
+    protected function states(string $subscriptionId, ?string $message = null): array
     {
         $states = [];
         $lines = $this->az(
             'provider list --query "[].[namespace, registrationState]" -o tsv --subscription '
             . \escapeshellarg($subscriptionId),
-            "Loading resource providers of $subscriptionId"
+            $message ?? "Loading resource providers of $subscriptionId"
         );
 
         foreach ($lines as $line) {
@@ -121,7 +139,9 @@ class ProvidersTool extends Command
     }
 
     /**
-     * @return array selected keys as [key => true]
+     * Last row is exit, enter on it ends command without changes.
+     *
+     * @return null|array selected keys as [key => true], null when exit chosen
      */
     protected function select(
         Style $style,
@@ -129,14 +149,23 @@ class ProvidersTool extends Command
         array $selected,
         array $locked,
         string $selectedChar = '<info>✓</info>'
-    ): array {
-        $style->writeln(' <fg=gray>space: toggle, ↑/↓: move, enter: confirm, ctrl+c: abort</>');
+    ): ?array {
+        $style->writeln(' <fg=gray>space: toggle, ↑/↓: move, enter: confirm (on Exit: quit)</>');
         $style->newLine();
 
-        return (new MultiSelect($style))
+        $multiSelect = (new MultiSelect($style))
             ->toggleShowInfo(false)
-            ->setSelectedChar($selectedChar)
-            ->renderMultiSelect($rows, $selected, $locked);
+            ->setSelectedChar($selectedChar);
+        $selected = $multiSelect->renderMultiSelect([...$rows, '<fg=red>✗ Exit</>'], $selected, $locked);
+
+        if ($multiSelect->getCursor() === \count($rows)) {
+            $style->newLine();
+            $style->writeln(' Exited.');
+
+            return null;
+        }
+
+        return $selected;
     }
 
     protected function register(Style $style, string $subscriptionId, array $namespaces): int
@@ -159,9 +188,68 @@ class ProvidersTool extends Command
         }
 
         $style->newLine();
-        $style->writeln(' Registration runs in background (few minutes), run command again to check state.');
+        $style->writeln(' Waiting for registration, enter stops watching (registration continues in Azure):');
+        $this->waitForRegistration($style, $subscriptionId, $namespaces);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Poll states every 10s, redraw list with spinner every 100ms (only on decorated output).
+     */
+    protected function waitForRegistration(Style $style, string $subscriptionId, array $namespaces): void
+    {
+        $live = $style->isDecorated();
+        // unbuffered, so stream_select sees every key
+        \stream_set_read_buffer(\STDIN, 0);
+
+        for ($frame = 0; ; $frame++) {
+            if ($frame % 100 === 0) {
+                $states = $this->states($subscriptionId, 'Checking registration state');
+                $done = !\array_diff($namespaces, \array_keys($states, 'Registered', true));
+            }
+
+            if ($live && $frame > 0) {
+                // provider rows + progress bar
+                $style->write("\033[" . (\count($namespaces) + 1) . 'A');
+            }
+
+            if ($live || $done) {
+                foreach ($namespaces as $namespace) {
+                    $state = $states[$namespace] ?? '';
+                    $icon = $state === 'Registered'
+                        ? '<info>✓</info>'
+                        : '<fg=blue>' . self::SPINNER[$frame % \count(self::SPINNER)] . '</>';
+
+                    $style->writeln(\sprintf(' %s %-45s %-12s', $icon, $namespace, $state));
+                }
+
+                $style->writeln($this->progressBar(\count(\array_intersect($namespaces, \array_keys($states, 'Registered', true))), \count($namespaces)));
+            }
+
+            if ($done) {
+                return;
+            }
+
+            // waits 100ms for enter without switching stdin to non-blocking (it's shared with shell)
+            $read = [\STDIN];
+            $none = [];
+
+            if (\stream_select($read, $none, $none, 0, 100000)) {
+                $char = \fgetc(\STDIN);
+
+                if ($char === "\n") {
+                    $style->writeln(' Stopped watching, registration continues in Azure.');
+
+                    return;
+                }
+
+                if ($char === false) {
+                    // closed stdin (pipe) is always readable
+                    \usleep(100000);
+                }
+            }
+        }
     }
 
     /**

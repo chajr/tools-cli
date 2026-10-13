@@ -54,6 +54,10 @@ class ProvidersCloneTool extends ProvidersTool
 
         $selected = $this->select($style, $rows, \array_diff($inSource, $locked), $locked, '<info>+</info>');
 
+        if ($selected === null) {
+            return self::SUCCESS;
+        }
+
         return $this->register($style, $targetId, $this->namespaces($namespaces, $selected, $locked));
     }
 }
