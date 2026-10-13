@@ -24,7 +24,7 @@
         "bluetree-service/container": "^0.3",
         "bluetree-service/filesystem": "^0.4",
         "bluetree-service/data": "^0.5",
-        "bluetree-service/symfony-console-style": "^0.7",
+        "bluetree-service/symfony-console-style": "^0.8",
         "bluetree-service/benchmark": "^0.6",
         "bluetree-service/cache": "^0.5",
         "bluetree-service/duplicate-detector-lib": "^0.5",

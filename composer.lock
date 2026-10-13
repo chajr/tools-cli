@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "78bdbad079a2f68d5619bd175383064f",
+    "content-hash": "75ed81beb5a45ec506aa5b49eef8767d",
     "packages": [
         {
             "name": "bluetree-service/benchmark",
@@ -236,21 +236,21 @@
         },
         {
             "name": "bluetree-service/duplicate-detector-lib",
-            "version": "0.5.0.0",
+            "version": "0.5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/duplicate-detector-lib.git",
-                "reference": "42e333b1b0c6b2e332e4ee6148a87236c8a2d3ea"
+                "reference": "786939df240e92271bc891d825a132dde4e2ea8c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/duplicate-detector-lib/zipball/42e333b1b0c6b2e332e4ee6148a87236c8a2d3ea",
-                "reference": "42e333b1b0c6b2e332e4ee6148a87236c8a2d3ea",
+                "url": "https://api.github.com/repos/bluetree-service/duplicate-detector-lib/zipball/786939df240e92271bc891d825a132dde4e2ea8c",
+                "reference": "786939df240e92271bc891d825a132dde4e2ea8c",
                 "shasum": ""
             },
             "require": {
                 "bluetree-service/data": "^0.5",
-                "bluetree-service/symfony-console-style": "^0.7",
+                "bluetree-service/symfony-console-style": "^0.7|^0.8",
                 "ext-json": "*",
                 "php": "^8.2",
                 "react/child-process": "^0.6.6",
@@ -293,9 +293,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bluetree-service/duplicate-detector-lib/issues",
-                "source": "https://github.com/bluetree-service/duplicate-detector-lib/tree/0.5.0.0"
+                "source": "https://github.com/bluetree-service/duplicate-detector-lib/tree/0.5.1.0"
             },
-            "time": "2026-10-01T20:14:40+00:00"
+            "time": "2026-10-13T12:17:42+00:00"
         },
         {
             "name": "bluetree-service/event",
@@ -518,16 +518,16 @@
         },
         {
             "name": "bluetree-service/symfony-console-style",
-            "version": "0.7.0.0",
+            "version": "0.8.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bluetree-service/symfony-console-style.git",
-                "reference": "3d863ba5040ae70609f4bcbe9d7aeea1ef8ae421"
+                "reference": "cb6dd16981fa22c164b5fbb0a9e6adf281e52944"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bluetree-service/symfony-console-style/zipball/3d863ba5040ae70609f4bcbe9d7aeea1ef8ae421",
-                "reference": "3d863ba5040ae70609f4bcbe9d7aeea1ef8ae421",
+                "url": "https://api.github.com/repos/bluetree-service/symfony-console-style/zipball/cb6dd16981fa22c164b5fbb0a9e6adf281e52944",
+                "reference": "cb6dd16981fa22c164b5fbb0a9e6adf281e52944",
                 "shasum": ""
             },
             "require": {
@@ -557,9 +557,9 @@
             "description": "Extends symfony console display style",
             "support": {
                 "issues": "https://github.com/bluetree-service/symfony-console-style/issues",
-                "source": "https://github.com/bluetree-service/symfony-console-style/tree/0.7.0.0"
+                "source": "https://github.com/bluetree-service/symfony-console-style/tree/0.8.0.0"
             },
-            "time": "2026-03-10T19:13:51+00:00"
+            "time": "2026-10-13T11:40:35+00:00"
         },
         {
             "name": "brick/math",
