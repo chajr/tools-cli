@@ -20,6 +20,7 @@ use Symfony\Component\Console\Terminal;
 class ProvidersTool extends Command
 {
     protected const REGISTERED = ['Registered', 'Registering'];
+    protected const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
     protected function configure(): void
     {
@@ -71,7 +72,10 @@ class ProvidersTool extends Command
     protected function subscription(string $subscription): array
     {
         $account = \json_decode(
-            \implode('', $this->az('account show -o json --subscription ' . \escapeshellarg($subscription))),
+            \implode('', $this->az(
+                'account show -o json --subscription ' . \escapeshellarg($subscription),
+                "Reading subscription $subscription"
+            )),
             true,
             512,
             \JSON_THROW_ON_ERROR
@@ -88,7 +92,8 @@ class ProvidersTool extends Command
         $states = [];
         $lines = $this->az(
             'provider list --query "[].[namespace, registrationState]" -o tsv --subscription '
-            . \escapeshellarg($subscriptionId)
+            . \escapeshellarg($subscriptionId),
+            "Loading resource providers of $subscriptionId"
         );
 
         foreach ($lines as $line) {
@@ -145,11 +150,12 @@ class ProvidersTool extends Command
         }
 
         foreach ($namespaces as $namespace) {
-            $style->writeln(" Registering <info>$namespace</info>");
             $this->az(
                 'provider register --namespace ' . \escapeshellarg($namespace)
-                . ' --subscription ' . \escapeshellarg($subscriptionId)
+                . ' --subscription ' . \escapeshellarg($subscriptionId),
+                "Registering $namespace"
             );
+            $style->writeln(" Registering <info>$namespace</info>");
         }
 
         $style->newLine();
@@ -159,16 +165,40 @@ class ProvidersTool extends Command
     }
 
     /**
+     * Shows spinner with message on stderr (only terminal) while az is running.
+     *
      * @return string[] output lines (stderr goes straight to terminal)
      */
-    protected function az(string $arguments): array
+    protected function az(string $arguments, string $message): array
     {
-        \exec("az $arguments", $lines, $code);
+        $process = \proc_open("az $arguments", [1 => ['pipe', 'w']], $pipes);
+        \stream_set_blocking($pipes[1], false);
+        $spinner = \stream_isatty(\STDERR);
+        $output = '';
 
-        if ($code !== 0) {
-            throw new \RuntimeException("az $arguments failed with code $code");
+        // exitcode is valid only in first status with running = false
+        for ($frame = 0; ($status = \proc_get_status($process))['running']; $frame++) {
+            $output .= \stream_get_contents($pipes[1]);
+
+            if ($spinner) {
+                \fwrite(\STDERR, "\r " . self::SPINNER[$frame % \count(self::SPINNER)] . " $message");
+            }
+
+            \usleep(100000);
         }
 
-        return $lines;
+        $output .= \stream_get_contents($pipes[1]);
+        \fclose($pipes[1]);
+        \proc_close($process);
+
+        if ($spinner) {
+            \fwrite(\STDERR, "\r\033[K");
+        }
+
+        if ($status['exitcode'] !== 0) {
+            throw new \RuntimeException("az $arguments failed with code {$status['exitcode']}");
+        }
+
+        return $output === '' ? [] : \explode("\n", \rtrim($output, "\n"));
     }
 }
